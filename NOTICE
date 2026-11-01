@@ -1,0 +1,8 @@
+GT8 Pro Quick Share AirDrop experimental adaptation
+
+Contains modified code and notices from moseyPLK public source collection,
+licensed under the Apache License, Version 2.0. See module-template/base-service/NOTICE
+and THIRD_PARTY_NOTICES.md in the module template for the upstream notices.
+
+The per-transfer callback recovery design was informed by Weverses/OPAirDrop.
+External Google, vendor, firmware and donor binary assets are not included.

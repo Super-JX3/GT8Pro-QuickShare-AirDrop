@@ -1,0 +1,13 @@
+#!/sbin/sh
+# Modified for the GT8 Pro adaptation; removed verbatim during assembly.
+umask 022
+OUTFD=$2
+ZIPFILE=$3
+export OUTFD ZIPFILE
+if [ ! -f /data/adb/magisk/util_functions.sh ]; then
+    echo '! Install this ZIP from Magisk or KernelSU Manager inside Android.'
+    exit 1
+fi
+# shellcheck source=/dev/null
+. /data/adb/magisk/util_functions.sh
+install_module

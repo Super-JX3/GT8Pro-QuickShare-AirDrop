@@ -1,0 +1,6 @@
+id=gt8pro.mosey.appstage
+name=GT8 Pro Mosey App Readiness
+version=v0.4.0
+versionCode=5
+author=Local GT8 Pro compatibility test
+description=Exact .501 system-app staging and read-only readiness report. No daemon start, GMS hook, init or wireless driver.

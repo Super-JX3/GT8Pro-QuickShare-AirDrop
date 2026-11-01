@@ -1,0 +1,69 @@
+{
+  "schema": 1,
+  "name": "GT8 Pro Mosey Registration Test",
+  "version": "0.3.0",
+  "deviceTested": false,
+  "stage": "finite_registration_observation_and_stop",
+  "upstream": "swift-lee/moseyPLK-public v0.7.0",
+  "upstreamZipSha256": "ca527bd589e00a132c4cf809a847ae480b6d4885269611057a4c74e1858e4a06",
+  "target": {
+    "model": "RMX5200",
+    "firmware": "RMX5200_16.0.10.501(CN01)",
+    "sdk": 36,
+    "platform": "canoe",
+    "kernel": "6.12.23-android16-5-gb2a876903b49-ab14541642-4k"
+  },
+  "scope": {
+    "bootEntrypoint": false,
+    "initRc": false,
+    "binderRegistration": true,
+    "gmsHook": false,
+    "wirelessDriver": false,
+    "moseyApp": false,
+    "manualPrivateNamespace": true,
+    "manualFixedBinds": [
+      "/odm/bin/mosey_load_probe",
+      "/odm/bin/mosey_server"
+    ],
+    "globalMountOperations": false,
+    "protocolCallsFromHarness": false,
+    "realServiceMayInitializeWireless": true,
+    "pidfdGuardianStopRequestSeconds": 40
+  },
+  "watchdog": {
+    "sha256": "da72d9f756cfe06795b0b84567fa5e6ad45c35ca6a8c21b58bb9c0d0a6fa6cc6",
+    "sourceSha256": "408dc1f34d2ff62883f0382230ed4d97cc90bbbde8eb7699ec06e4a9ca4eb96e",
+    "compiler": "clang 13.0.1 / LLD 13.0.1",
+    "libc": "musl 1.2.5 static",
+    "hostTested": true,
+    "androidTested": false,
+    "muslArchiveSha256": "a9a118bbe84d8764da0ea0d28b3ab3fae8477fc7e4085d90102b8596fc7c75e4"
+  },
+  "originalFileHashes": {
+    "META-INF/com/google/android/update-binary": "3e9a9c55bfe28212df8c389a425760a01e4d19fb8efa2408f804bc0e60c7acb4",
+    "META-INF/com/google/android/updater-script": "d2b8203193a083e43ad076fde01b9c7821e0aa521e1f8077b8628fb1cdb70c60",
+    "compatibility.sh": "4fd6d312ef3a1e424acb28430b532ef0d2fc2978eac681741f7270a7e30d37ff",
+    "uninstall.sh": "e52aeed2a0f8109844358d3f7f2837d9a4a76680f5fd7fef264ed59651400c4b",
+    "registration-checks.sh": "8969e478df223ddda6a3f54e179cfd52e240ffe70ee4bea7441cb65e0a66a3fd",
+    "system/odm/bin/mosey_load_probe": "f736d6e9048ed0d80c3211fed3d2d159c347a017d5666be6104472596fb8ed9d",
+    "system/odm/lib64/libmosey_load_probe.so": "49a82dcf873cadb5f78a01d698b6f6bef5067c07dbd362e5e463b1f583d2d671",
+    "system/vendor/bin/mosey_launcher": "1e9528a3ee0cebf52e8334c487f081a5c351a65c6283f8be8899e2c0801e870b",
+    "system/odm/bin/mosey_server": "53aa112866da41f32de05efd91730a27f0f1a40a79ebe61be95bd8d1944a0326",
+    "system/odm/lib64/libmosey_daemon_ffi.so": "89c83ba82930696930968b5aa0d515983be96732697d2bf825e5bfb4ba549ea6",
+    "system/odm/lib64/libmosey_registration_compat.so": "76a5b51899142fc76353f38b2dc200ae001db3b6e72ee2d6324820f0341ad732",
+    "load-probe.sh": "88c49c581fdd4b8186cf8ed9e4f09ca37cb8414b2514ceba072d36f20c927243"
+  },
+  "modifications": [
+    "new exact-device installer and runtime preflight",
+    "manual allowlisted Action report",
+    "probe private log root changed",
+    "separate install/runtime manifests; validate fixed relocated partition paths",
+    "manual isolated namespace; bind original probe and real server; retain all exact-device gates",
+    "original registration identity and shim parsers retained; require absence before and after owned run",
+    "new fixed-child pidfd supervisor and independently sessioned bounded guardian; no PID adoption or name-based signals",
+    "three KernelSU transition rules plus scoped ksu->mosey_server signal/sigkill; no su-domain rules",
+    "does not include system app, init/VINTF declarations, boot entrypoints, client hooks or wireless drivers",
+    "registration-only experiment without app integration or init/system_server mount-view requirements; not full-system readiness"
+  ],
+  "licenseBoundary": "Apache-2.0 applies to project code, not external original launcher/vendor payloads; retain third-party notices."
+}

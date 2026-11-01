@@ -1,0 +1,49 @@
+# GT8 Pro Quick Share ↔ AirDrop（实验项目）
+
+让特定固件的真我 GT8 Pro 在 Quick Share 中使用 Mosey/AirDrop 互传。项目提供 KernelSU/SukiSU 整合模块源码、LSPosed 兼容桥、恢复逻辑及本地组包工具。
+
+**状态：实验候选，不是 Google、Apple 或 realme 官方产品。** 已在一台设备上验证重启后的服务启动、iPhone 与 Android 双向传输；接收视频曾出现文件已保存但界面卡住，0.13.6 的回调修复在一个复现样本上使界面最终显示“已接收”。长时间后设备不可发现、采样异常退出、进度短暂停留、多个文件及并发传输仍需进一步验证。
+
+## 已验证的设备
+
+| 项目 | 范围 |
+| --- | --- |
+| 机型 | realme GT8 Pro，型号 **RMX5200** |
+| 固件 | **RMX5200_16.0.10.501(CN01)**，Android 16 / SDK 36 |
+| 平台与内核 | `canoe`；`6.12.23-android16-5-gb2a876903b49-ab14541642-4k` |
+| Root / 挂载 | 测试机使用 KernelSU/SukiSU 与 SELinux Enforcing |
+| 应用桥 | LSPosed；仅作用于主用户的 Google Play 服务和 `com.google.android.mosey` |
+| 软件身份 | Mosey 60715 与固定版本的 Google Play 服务，运行时通过 SHA-256 核对 |
+
+其他机型、固件、内核、Magisk 或其他版本的 GMS/Mosey **未验证**。安装检查会拒绝不匹配环境；不要通过删除检查来宣称已适配。固件或应用更新可能使模块停止工作。
+
+## 使用方式
+
+在系统分享面板中选择 Quick Share，或打开 Quick Share 接收页面。监听器检测到页面处于前台后按需启动原生服务和代理，首次就绪存在延迟。iPhone 的 AirDrop 接收需设为“所有人，10 分钟”以便发现；发送方和接收方均需在附近。退出分享流程后服务会尝试清理，监听器等待下一次打开。
+
+Live Photo 的动态部分和 Android 相册显示兼容性尚未完成验证。接收时以实际文件和两端状态为准；部分大文件的进度可能短暂停留。
+
+## 获取与安装
+
+项目由 **一个 KernelSU/SukiSU 整合模块 ZIP + 一个 LSPosed 桥 APK** 组成，另需系统已安装并正常运行的 LSPosed。整合模块不依赖原来的 0.3.0、0.4.0 或独立 daily 模块；迁移时旧模块应禁用，确认新版本正常后再自行决定如何处理备份。
+
+`releases/GT8Pro-MoseyBridge-0.11.6.apk` 是经过个人信息清理后重建的桥 APK。0.13.7 / 0.11.6 在测试机上通过了重启启动和一次 iPhone→Android 接收：进度短暂停在 25% 后显示“已接收”，日志记录了真实完成回调的补送。该文件未做两端独立哈希比较；反向传输、并发和长期稳定性未在此版本重新验收。不要将主机测试当作手机验收。
+
+整合 ZIP 含 Google、设备厂商或外部构建输入，仓库不提供这些文件。需要从有权使用的本地来源准备 `external-inputs.json` 中全部固定哈希的输入，包括原厂文件和项目生成的辅助二进制。当前组包器要求完全匹配的输入，**仅有本仓库不足以从零生成安装包**。例如，已有的本地 0.13.6 整合 ZIP 可作为输入：
+
+```sh
+python3 tools/assemble.py --input /path/to/GT8Pro-QuickShare-Integrated-0.13.6-callback-candidate.zip --output dist/GT8Pro-QuickShare-0.13.7.zip
+```
+
+组包器只在本机按 SHA-256 匹配文件、验证安装清单并输出 ZIP，不下载或上传材料。不要将私人输入、固件、系统 APK、签名密钥或自己的测试日志提交到 GitHub。构建细节与限制见 [构建说明](docs/BUILD.md)。
+
+安装步骤、验证、回滚和已知限制见 [安装与使用](docs/INSTALL.md)。模块 ZIP 是管理器安装包，**不是整机刷机包**。
+
+## 源码和许可
+
+- `bridge/`：LSPosed 桥接源码及主机测试。
+- `module-template/`：整合模块脚本和校验清单，不含外部二进制输入。
+- `native/`、`helpers/`：守护进程和辅助工具的源码。
+- `tools/assemble.py`：基于本地输入的组包工具。
+
+项目代码遵循 [Apache-2.0](LICENSE)，并保留 [NOTICE](NOTICE) 与模块内第三方声明。外部 Google/厂商资产不因本项目许可而获得再分发授权。设计参考 [moseyPLK-public](https://github.com/swift-lee/moseyPLK-public) 的 Apache-2.0 代码，以及 [OPAirDrop](https://github.com/Weverses/OPAirDrop) 的 GPL-3.0-only 回调思路；本仓库没有包含其 APK 补丁脚本或厂商固件。详见 [来源和边界](docs/ATTRIBUTION.md)。

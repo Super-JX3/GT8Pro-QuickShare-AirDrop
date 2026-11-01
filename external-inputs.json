@@ -1,0 +1,120 @@
+{
+  "version": "0.13.7-public-candidate",
+  "files": [
+    {
+      "path": "base-app/system/system_ext/etc/default-permissions/default-permissions-com.google.android.mosey.xml",
+      "sha256": "b25fbf4d59df5fb794234c473cdb0c36fb4d76d3cd746545e665446b59b93e86",
+      "size": 1534
+    },
+    {
+      "path": "base-app/system/system_ext/etc/permissions/privapp-permissions-com.google.android.mosey.xml",
+      "sha256": "1add90954c70167b5d6fcd3089031aba370c83cfa435bf5728ad1f75834a77dd",
+      "size": 1394
+    },
+    {
+      "path": "base-app/system/system_ext/priv-app/MoseyApp/MoseyApp.apk",
+      "sha256": "8ddb871f9a4df13181de71a89dcbec9f05ff7a2c9c0519f88e5851e6e7765d14",
+      "size": 4080157
+    },
+    {
+      "path": "base-service/system/odm/bin/mosey_load_probe",
+      "sha256": "f736d6e9048ed0d80c3211fed3d2d159c347a017d5666be6104472596fb8ed9d",
+      "size": 15480
+    },
+    {
+      "path": "base-service/system/odm/bin/mosey_server",
+      "sha256": "53aa112866da41f32de05efd91730a27f0f1a40a79ebe61be95bd8d1944a0326",
+      "size": 1004464
+    },
+    {
+      "path": "base-service/system/odm/lib64/libmosey_daemon_ffi.so",
+      "sha256": "89c83ba82930696930968b5aa0d515983be96732697d2bf825e5bfb4ba549ea6",
+      "size": 2537696
+    },
+    {
+      "path": "base-service/system/odm/lib64/libmosey_load_probe.so",
+      "sha256": "49a82dcf873cadb5f78a01d698b6f6bef5067c07dbd362e5e463b1f583d2d671",
+      "size": 6048
+    },
+    {
+      "path": "base-service/system/odm/lib64/libmosey_registration_compat.so",
+      "sha256": "76a5b51899142fc76353f38b2dc200ae001db3b6e72ee2d6324820f0341ad732",
+      "size": 17592
+    },
+    {
+      "path": "base-service/system/vendor/bin/mosey_launcher",
+      "sha256": "1e9528a3ee0cebf52e8334c487f081a5c351a65c6283f8be8899e2c0801e870b",
+      "size": 9016
+    },
+    {
+      "path": "base-service/tools/gt8_service_watchdog",
+      "sha256": "da72d9f756cfe06795b0b84567fa5e6ad45c35ca6a8c21b58bb9c0d0a6fa6cc6",
+      "size": 53392
+    },
+    {
+      "path": "payload/activation-helper.jar",
+      "sha256": "5d65c5d7c6bd5d608a534ba0df5f30e056b39af57e2c9cb5babf0a637c03ee57",
+      "size": 11252
+    },
+    {
+      "path": "payload/gt8_service_watchdog_soak",
+      "sha256": "ff319e66b79a00a6ec3a9605ac7b60b24071c684393c98719f8729d39143c24a",
+      "size": 9033064
+    },
+    {
+      "path": "payload/outer-watchdog",
+      "sha256": "883c7527aa8ee2bdf7e7da963f30da79e5d846525bcdc4bd685bb276b1e8266a",
+      "size": 9034232
+    },
+    {
+      "path": "payload/profile-helper.jar",
+      "sha256": "f26c49b24e41498de0cc6b16c552a2b3e76c76a14c1ebfd07dfc0b2f3476b6d2",
+      "size": 8388
+    },
+    {
+      "path": "system/odm/bin/mosey_load_probe",
+      "sha256": "f736d6e9048ed0d80c3211fed3d2d159c347a017d5666be6104472596fb8ed9d",
+      "size": 15480
+    },
+    {
+      "path": "system/odm/bin/mosey_server",
+      "sha256": "53aa112866da41f32de05efd91730a27f0f1a40a79ebe61be95bd8d1944a0326",
+      "size": 1004464
+    },
+    {
+      "path": "system/odm/lib64/libmosey_daemon_ffi.so",
+      "sha256": "89c83ba82930696930968b5aa0d515983be96732697d2bf825e5bfb4ba549ea6",
+      "size": 2537696
+    },
+    {
+      "path": "system/odm/lib64/libmosey_load_probe.so",
+      "sha256": "49a82dcf873cadb5f78a01d698b6f6bef5067c07dbd362e5e463b1f583d2d671",
+      "size": 6048
+    },
+    {
+      "path": "system/odm/lib64/libmosey_registration_compat.so",
+      "sha256": "76a5b51899142fc76353f38b2dc200ae001db3b6e72ee2d6324820f0341ad732",
+      "size": 17592
+    },
+    {
+      "path": "system/system_ext/etc/default-permissions/default-permissions-com.google.android.mosey.xml",
+      "sha256": "b25fbf4d59df5fb794234c473cdb0c36fb4d76d3cd746545e665446b59b93e86",
+      "size": 1534
+    },
+    {
+      "path": "system/system_ext/etc/permissions/privapp-permissions-com.google.android.mosey.xml",
+      "sha256": "1add90954c70167b5d6fcd3089031aba370c83cfa435bf5728ad1f75834a77dd",
+      "size": 1394
+    },
+    {
+      "path": "system/system_ext/priv-app/MoseyApp/MoseyApp.apk",
+      "sha256": "8ddb871f9a4df13181de71a89dcbec9f05ff7a2c9c0519f88e5851e6e7765d14",
+      "size": 4080157
+    },
+    {
+      "path": "system/vendor/bin/mosey_launcher",
+      "sha256": "1e9528a3ee0cebf52e8334c487f081a5c351a65c6283f8be8899e2c0801e870b",
+      "size": 9016
+    }
+  ]
+}

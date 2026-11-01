@@ -1,0 +1,6 @@
+id=gt8pro.mosey.servicetest
+name=GT8 Pro Mosey Registration Test (manual, auto-stop)
+version=v0.3.0
+versionCode=4
+author=GT8 Pro adaptation; upstream swift-lee/moseyPLK
+description=RMX5200 CN01 .501 only. Manual registration experiment with pidfd watchdog and auto-stop. No boot service, GMS hook or driver replacement.

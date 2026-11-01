@@ -1,0 +1,10 @@
+local-inputs/
+dist/
+build/
+__pycache__/
+*.pyc
+*.p12
+*.jks
+*.keystore
+password.txt
+.DS_Store

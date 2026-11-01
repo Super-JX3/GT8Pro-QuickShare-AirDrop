@@ -1,0 +1,9 @@
+# Modified for the GT8 Pro adaptation; removed verbatim during assembly.
+# GT8 Pro manual load probe only. No permissive domains or broad wildcard rules.
+# Caller must already be KernelSU root in u:r:ksu:s0.
+allow ksu mosey_server_exec file { read getattr map execute open };
+allow ksu mosey_server process { transition siginh rlimitinh };
+type_transition ksu mosey_server_exec process mosey_server;
+
+# Needed only by the run's pidfd-owning ksu supervisor/guardian to stop its child.
+allow ksu mosey_server process { signal sigkill };

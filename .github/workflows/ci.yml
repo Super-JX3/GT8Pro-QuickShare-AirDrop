@@ -1,0 +1,30 @@
+name: Host checks
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  host-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Bridge and supervisor tests
+        run: |
+          python3 bridge/test-host.py
+          python3 bridge/test-discover.py
+          python3 bridge/test-route.py
+          python3 bridge/test-reasons.py
+          python3 bridge/test-metadata.py
+          python3 bridge/test-callback.py
+          python3 tools/test-supervisor-retry.py
+      - name: Shell syntax
+        run: find module-template -name '*.sh' -print0 | xargs -0 -n 1 sh -n

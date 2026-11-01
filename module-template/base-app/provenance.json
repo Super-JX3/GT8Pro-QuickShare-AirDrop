@@ -1,0 +1,47 @@
+{
+  "schema": 1,
+  "name": "GT8 Pro Mosey App Readiness",
+  "version": "0.4.0",
+  "deviceTested": false,
+  "upstream": "swift-lee/moseyPLK-public v0.7.0",
+  "upstreamZipSha256": "ca527bd589e00a132c4cf809a847ae480b6d4885269611057a4c74e1858e4a06",
+  "originalFileHashes": {
+    "META-INF/com/google/android/update-binary": "3e9a9c55bfe28212df8c389a425760a01e4d19fb8efa2408f804bc0e60c7acb4",
+    "META-INF/com/google/android/updater-script": "d2b8203193a083e43ad076fde01b9c7821e0aa521e1f8077b8628fb1cdb70c60",
+    "compatibility.sh": "4fd6d312ef3a1e424acb28430b532ef0d2fc2978eac681741f7270a7e30d37ff",
+    "system/system_ext/priv-app/MoseyApp/MoseyApp.apk": "8ddb871f9a4df13181de71a89dcbec9f05ff7a2c9c0519f88e5851e6e7765d14",
+    "system/system_ext/etc/permissions/privapp-permissions-com.google.android.mosey.xml": "1add90954c70167b5d6fcd3089031aba370c83cfa435bf5728ad1f75834a77dd",
+    "system/system_ext/etc/default-permissions/default-permissions-com.google.android.mosey.xml": "b25fbf4d59df5fb794234c473cdb0c36fb4d76d3cd746545e665446b59b93e86"
+  },
+  "app": {
+    "package": "com.google.android.mosey",
+    "versionCode": 13120,
+    "versionName": "1.0.864840262",
+    "minSdk": 36,
+    "sha256": "8ddb871f9a4df13181de71a89dcbec9f05ff7a2c9c0519f88e5851e6e7765d14",
+    "signerSha256": "82f90326951d14e08010b2a26cce329be2b09e74752158b7640e04a544676878",
+    "originalSignaturePreserved": true
+  },
+  "targetGateSourceSha256": "d52cc0d31e62d3260b8b0a5ccc03387aeb12a72ecd8faa1fc235702649f1cfdb",
+  "scope": {
+    "persistentSystemApp": true,
+    "scopedPrivilegeXml": true,
+    "bootEntrypoint": false,
+    "nativeServiceStart": false,
+    "gmsHook": false,
+    "appHook": false,
+    "driverChanges": false,
+    "actionReadOnlyExceptPrivateReports": true,
+    "systemMayNaturallyBindApp": true,
+    "activeUser": 0,
+    "views": [
+      "self",
+      "init",
+      "system_server"
+    ],
+    "requiredPrivilegedPermissions": 7,
+    "requiredRequestedRuntimePermissions": 6
+  },
+  "limitation": "App readiness only; no Binder binding, discovery, protocol, or transfer acceptance. XML includes an unrequested BLUETOOTH_CONNECT entry; it is not counted as a requested runtime permission.",
+  "licenseBoundary": "External Google/vendor app and configs retain their separate rights; Apache-2.0 does not relicense donor assets."
+}
