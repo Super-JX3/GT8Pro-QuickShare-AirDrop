@@ -14,7 +14,7 @@ case "$wp:$wt" in *[!0-9:]*|:*|*:) exit 1;;esac
 [ -z "$wx" ] && [ "$(awk 'NR==1{sub(/^.*[)] /,"");print $20}' "/proc/$wp/stat" 2>/dev/null)" != "$wt" ] || exit 1
 wr=$d/watcher-owner.record
 [ ! -L "$wr" ] && [ "$(stat -c '%u:%a' "$wr" 2>/dev/null)" = 0:600 ] && [ "$(cat "$wr")" = "$wp $wt" ] || exit 1
-[ "$(sha256sum "$b/bind-common.sh" | cut -d ' ' -f1)" = c9a1a8f66bedefcfed873f0052a3f9a3006b8157c96bf43b4eb685153da7fe0f ] || exit 1
+[ "$(sha256sum "$b/bind-common.sh" | cut -d ' ' -f1)" = e6a75e680b406e4a18f07ef1e9627e2cc02aeb20046ff44a6b996486d8d3ab7f ] || exit 1
 [ "$(sha256sum "$b/handoff-lock.sh" | cut -d ' ' -f1)" = b30ce8a43d9d6ab7390ff8d221bcb9cd0a03d666a3ac3b4d5dffe91a100ba892 ] || exit 1
 . "$b/handoff-lock.sh"
 gt8_handoff_lock "$r/mutation.lock" || exit 1
@@ -31,9 +31,12 @@ record=$d/binding-app-record.txt
 [ ! -L "$record" ] && [ "$(stat -c '%u:%a' "$record" 2>/dev/null)" = 0:600 ] || exit 1
 ap=$(awk -F= '$1=="PID"&&$2~/^[0-9]+$/{n++;v=$2}END{if(n==1)print v}' "$record")
 at=$(awk -F= '$1=="START_TOKEN"&&$2~/^[0-9]+$/{n++;v=$2}END{if(n==1)print v}' "$record")
+au=$(awk -F= '$1=="UID"&&$2~/^[0-9]+$/{n++;v=$2}END{if(n==1)print v}' "$record")
+current_uid=$(gt8_user0_mosey_uid) || exit 1
+[ "$au" = "$current_uid" ] || exit 1
 case "$ap:$at" in *[!0-9:]*|:*|*:)exit 1;;esac
 BIND_PROC_ROOT=/proc
-bind_app_identity "$ap" "$at" 10366 || exit 1
+bind_app_identity "$ap" "$at" "$current_uid" || exit 1
 [ "$(gt8_mosey_main_pids)" = "$ap" ] || exit 1
 
 for svc in com.google.android.moseyservice.IMoseyService/default com.google.pixel.moseyservice.IMoseyService/default;do
@@ -46,7 +49,7 @@ for i in 1 2 3;do
  [ "$a" = TRANSFER_CLASS=IDLE ] && [ "$x" = PROVIDER_TRANSFER_CLASS=IDLE_SNAPSHOT ] || exit 1
  [ "$i" = 3 ] || sleep 1
 done
-[ "$(cat "$r/session-owner")" = "$run $ctrl $tok" ] && [ ! -e "$r/action-lock" ] && bind_app_identity "$ap" "$at" 10366 && [ "$(gt8_mosey_main_pids)" = "$ap" ] || exit 1
+[ "$(cat "$r/session-owner")" = "$run $ctrl $tok" ] && [ ! -e "$r/action-lock" ] && [ "$(gt8_user0_mosey_uid)" = "$current_uid" ] && bind_app_identity "$ap" "$at" "$current_uid" && [ "$(gt8_mosey_main_pids)" = "$ap" ] || exit 1
 timeout -k 1 4 pm disable --user 0 com.google.android.mosey/.ExternalSharingService >/dev/null || exit 1
 timeout -k 1 4 am force-stop --user 0 com.google.android.mosey || exit 1
 echo STALE_PROVIDER_RECOVERY=REQUESTED

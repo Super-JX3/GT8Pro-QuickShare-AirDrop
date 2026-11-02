@@ -10,7 +10,7 @@ unset LD_PRELOAD LD_LIBRARY_PATH MOSEY_REGISTRATION_COMPAT
 umask 077
 set -f
 printf 'GT8PRO_APP_BINDING_REPORT_V1\n'
-echo PACKAGE_VERSION=0.13.7-public-candidate
+echo PACKAGE_VERSION=0.13.8-dynamic-uid-candidate
 echo TEST_TRIGGER=BOUNDED_CONTINUOUS_SOAK
 [ "$(id -u)" = 0 ] || { echo RESULT=ROOT_REQUIRED; exit 1; }
 [ "$(cat /proc/self/attr/current 2>/dev/null)" = u:r:ksu:s0 ] \
@@ -93,15 +93,15 @@ bind_bootstrap_ok() {
     b_sum=$(sha256sum "$GT8_BINDDIR/gt8_service_watchdog_soak") || return 1
     [ "${b_sum%% *}" = ff319e66b79a00a6ec3a9605ac7b60b24071c684393c98719f8729d39143c24a ] || return 1
     b_sum=$(sha256sum "$GT8_BINDDIR/current-code-profile.sh") || return 1
-    [ "${b_sum%% *}" = 06eda872c7d4f5d1d31df9f5e218bf8314c7c1f9a0dd4329e00bac7fcdf4a8c0 ] || return 1
+    [ "${b_sum%% *}" = 7fb91a14085dc40baecda8ff94b44ac81cb180036c6e592ea8b9a72bccfca8c2 ] || return 1
     b_sum=$(sha256sum "$GT8_BINDDIR/updated-package-checks.sh") || return 1
-    [ "${b_sum%% *}" = 187cbb2e943e680a694b081b4c1c64b77bd5d2ed796d6cab86468c6f69d13538 ] || return 1
+    [ "${b_sum%% *}" = 6f91973ddc2eba7d12a8620d5544f067be1e3472331a1efdaa45718d5d321d69 ] || return 1
     b_sum=$(sha256sum "$GT8_BINDDIR/app-stream.sh" 2>/dev/null) || return 1
-    [ "${b_sum%% *}" = df6dafdc081a64f5692c098e00f588fc6ee06e07c1683fe6efdf9e88d5304b47 ] || return 1
+    [ "${b_sum%% *}" = 5a578ead16c302858c8bbd174072030820e12ffb748beae1d61cebb6cd31fff2 ] || return 1
     b_sum=$(sha256sum "$GT8_BINDDIR/provider-guard.sh" 2>/dev/null) || return 1
     [ "${b_sum%% *}" = 8351ae8ea68a9231734fe9e78847d6c788ac9d11e132a80ca6025b5e60e1f6b7 ] || return 1
     b_sum=$(sha256sum "$GT8_BINDDIR/provider-control.sh" 2>/dev/null) || return 1
-    [ "${b_sum%% *}" = f139ed82507211bb995443320d017f2fbe374539c80d5d5ec653b3fe4ee0963a ] || return 1
+    [ "${b_sum%% *}" = 58059330e3dcf7117b7c97ba5e590958d33de3dea8e836415b9435c8ddc99558 ] || return 1
     b_sum=$(sha256sum "$GT8_BINDDIR/transfer-idle.sh" 2>/dev/null) || return 1
     [ "${b_sum%% *}" = e156907644bfdaecfd9dbc3e5d5df281d5fe3aeea2a65efd39825c55d3e87db2 ] || return 1
     b_sum=$(sha256sum "$GT8_BINDDIR/ui-meta.sh" 2>/dev/null) || return 1
@@ -115,13 +115,13 @@ bind_bootstrap_ok() {
     b_sum=$(sha256sum "$GT8_BINDDIR/ui-guard.sh" 2>/dev/null) || return 1
     [ "${b_sum%% *}" = 61d891907545d681033d34ee1fa3d406247d95bf2299b31fa105c17380673868 ] || return 1
     b_sum=$(sha256sum "$GT8_BINDDIR/bind-common.sh" 2>/dev/null) || return 1
-    [ "${b_sum%% *}" = c9a1a8f66bedefcfed873f0052a3f9a3006b8157c96bf43b4eb685153da7fe0f ] || return 1
+    [ "${b_sum%% *}" = e6a75e680b406e4a18f07ef1e9627e2cc02aeb20046ff44a6b996486d8d3ab7f ] || return 1
     b_sum=$(sha256sum "$GT8_BINDDIR/precheck.sh" 2>/dev/null) || return 1
-    [ "${b_sum%% *}" = e89ed6610f8d13f6ae7552692e7975e82a764dc186a4a664662d19efe7574b27 ] || return 1
+    [ "${b_sum%% *}" = f7ce6de73b088f695e9eb1717f4ecf879bb04fcd07f0e74a9b4ce23db89e6330 ] || return 1
     b_sum=$(sha256sum "$GT8_BINDDIR/delegate-policy.sh" 2>/dev/null) || return 1
     [ "${b_sum%% *}" = be01bfd183ce2cdc8de97fdcfcbf4905e6484689741b3e8a2b268f58544d4ca4 ] || return 1
     b_sum=$(sha256sum "$GT8_BINDDIR/delegate-runner.sh" 2>/dev/null) || return 1
-    [ "${b_sum%% *}" = 291f5d8322c0eb6a7c8fe4a63aaae4f6364e594dbf5b1d289d1260d004ecb260 ] || return 1
+    [ "${b_sum%% *}" = 116fdff6b9c1533257166de7359692c03a7bae6f80e0d4d55738a7f31d10a133 ] || return 1
     b_sum=$(sha256sum "$GT8_BINDDIR/app-probe.sh" 2>/dev/null) || return 1
     [ "${b_sum%% *}" = c7f3c42aa62e940b45ec088130185febfedce6926eca71d50005428f80ed55ac ] || return 1
     b_sum=$(sha256sum "$GT8_BINDDIR/app-guard.sh" 2>/dev/null) || return 1

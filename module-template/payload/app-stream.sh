@@ -10,7 +10,8 @@ case "$OUT" in /data/adb/gt8pro-mosey-service/run.??????) ;; *) exit 1;;esac
 [ "$(id -u)" = 0 ] && [ "$(cat /proc/self/attr/current)" = u:r:ksu:s0 ] && [ ! -L "$OUT" ] && [ "$(stat -c '%u:%a' "$OUT")" = 0:700 ] && [ "$(readlink -f "$OUT")" = "$OUT" ] || exit 1
 [ ! -L "$OUT/binding-app-uid.txt" ] && [ "$(stat -c '%u:%a' "$OUT/binding-app-uid.txt")" = 0:600 ] || exit 1
 uid=$(cat "$OUT/binding-app-uid.txt")
-[ "$uid" = 10366 ] || exit 1
+. "$GT8_BINDDIR/bind-common.sh"
+[ "$(gt8_user0_mosey_uid)" = "$uid" ] || exit 1
 case "$GT8_SOAK_SECONDS" in 10|70|240|600|1800) ;;*)exit 1;;esac
 stream_seconds=$((GT8_SOAK_SECONDS+15))
 start=$(date +%s)

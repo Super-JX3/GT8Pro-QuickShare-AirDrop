@@ -41,7 +41,12 @@ public final class FixtureProvider extends ContentProvider {
    android.net.Uri active=MediaFixture.saved(getContext());
    if(active==null)active=URI;
    int targetUid;
-   try{targetUid=getContext().getPackageManager().getApplicationInfo("com.google.android.mosey",0).uid;}
+   try{
+    PackageManager pm=getContext().getPackageManager();
+    targetUid=pm.getApplicationInfo("com.google.android.mosey",0).uid;
+    String[] owners=pm.getPackagesForUid(targetUid);
+    if(!UidPolicy.validTarget(android.os.Process.myUid(),targetUid,owners))targetUid=-1;
+   }
    catch(PackageManager.NameNotFoundException unavailable){targetUid=-1;}
    Bundle result=new Bundle();
    if("inspect-own-fixture".equals(method)){
@@ -51,9 +56,9 @@ public final class FixtureProvider extends ContentProvider {
    }else if("grant-own-fixture".equals(method)){
     boolean valid=URI.equals(active);
     try{if(!valid)valid=MediaFixture.valid(getContext(),active);}catch(Exception failure){valid=false;}
-    if(targetUid==10366&&valid)getContext().grantUriPermission("com.google.android.mosey",active,Intent.FLAG_GRANT_READ_URI_PERMISSION);
+    if(targetUid>=10000&&valid)getContext().grantUriPermission("com.google.android.mosey",active,Intent.FLAG_GRANT_READ_URI_PERMISSION);
    }else {getContext().revokeUriPermission(active,Intent.FLAG_GRANT_READ_URI_PERMISSION);if(!URI.equals(active))getContext().revokeUriPermission(URI,Intent.FLAG_GRANT_READ_URI_PERMISSION);}
-   boolean present=getContext().checkUriPermission(active,-1,10366,Intent.FLAG_GRANT_READ_URI_PERMISSION)==PackageManager.PERMISSION_GRANTED;
+   boolean present=targetUid>=10000&&getContext().checkUriPermission(active,-1,targetUid,Intent.FLAG_GRANT_READ_URI_PERMISSION)==PackageManager.PERMISSION_GRANTED;
    result.putString("fixture_grant",present?"GRANTED":"ABSENT");return result;
   }finally{Binder.restoreCallingIdentity(identity);}
  }

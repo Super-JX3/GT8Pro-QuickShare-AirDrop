@@ -4,7 +4,7 @@
 
 **状态：实验候选，不是 Google、Apple 或 realme 官方产品。** 已在一台设备上验证重启后的服务启动、iPhone 与 Android 双向传输；接收视频曾出现文件已保存但界面卡住，0.13.6 的回调修复在一个复现样本上使界面最终显示“已接收”。长时间后设备不可发现、采样异常退出、进度短暂停留、多个文件及并发传输仍需进一步验证。
 
-> **已知兼容性问题（0.13.7 / 0.11.6）：** 当前版本在多处将 Mosey 应用 UID 固定为测试机的 `10366`。即使是相同机型和固件，其他设备的 UID 也可能不同，导致服务无法启动、代理及异常恢复失败。请勿把当前候选视为支持所有同型号设备；动态 UID 修复尚在开发。
+> **已知兼容性问题（0.13.7 / 0.11.6）：** 当前版本在多处将 Mosey 应用 UID 固定为测试机的 `10366`。即使是相同机型和固件，其他设备的 UID 也可能不同，导致服务无法启动、代理及异常恢复失败。请勿把当前候选视为支持所有同型号设备；0.13.8 候选已改为动态查询 UID，并在原测试机启动；不同 UID 的真实设备仍未验证。
 
 ## 已验证的设备
 
@@ -34,7 +34,7 @@ Live Photo 的动态部分和 Android 相册显示兼容性尚未完成验证。
 整合 ZIP 含 Google、设备厂商或外部构建输入，仓库不提供这些文件。需要从有权使用的本地来源准备 `external-inputs.json` 中全部固定哈希的输入，包括原厂文件和项目生成的辅助二进制。当前组包器要求完全匹配的输入，**仅有本仓库不足以从零生成安装包**。例如，已有的本地 0.13.6 整合 ZIP 可作为输入：
 
 ```sh
-python3 tools/assemble.py --input /path/to/GT8Pro-QuickShare-Integrated-0.13.6-callback-candidate.zip --output dist/GT8Pro-QuickShare-0.13.7.zip
+python3 tools/assemble.py --input /path/to/local-verified-inputs --output dist/GT8Pro-QuickShare-0.13.8.zip
 ```
 
 组包器只在本机按 SHA-256 匹配文件、验证安装清单并输出 ZIP，不下载或上传材料。不要将私人输入、固件、系统 APK、签名密钥或自己的测试日志提交到 GitHub。构建细节与限制见 [构建说明](docs/BUILD.md)。
@@ -49,3 +49,5 @@ python3 tools/assemble.py --input /path/to/GT8Pro-QuickShare-Integrated-0.13.6-c
 - `tools/assemble.py`：基于本地输入的组包工具。
 
 项目代码遵循 [Apache-2.0](LICENSE)，并保留 [NOTICE](NOTICE) 与模块内第三方声明。外部 Google/厂商资产不因本项目许可而获得再分发授权。设计参考 [moseyPLK-public](https://github.com/swift-lee/moseyPLK-public) 的 Apache-2.0 代码，以及 [OPAirDrop](https://github.com/Weverses/OPAirDrop) 的 GPL-3.0-only 回调思路；本仓库没有包含其 APK 补丁脚本或厂商固件。详见 [来源和边界](docs/ATTRIBUTION.md)。
+
+当前源码是 0.13.8 动态 UID 实验候选；旧版 0.13.7 的固定 UID 限制仍适用。候选仍存在会话目录累计、桥接 24 小时到期、升级运行目录及自有组件重建限制，尚不适合宣传为通用稳定版。

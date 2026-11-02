@@ -37,13 +37,15 @@ app_package_check_updated() {
     ' "$1"
 }
 updated_code_profile_ok(){
- awk '
+ case "${2:-}" in ''|*[!0-9]*) return 1;;esac
+ [ "$2" -ge 10000 ] && [ "$2" -lt 20000 ] || return 1
+ awk -v expected_uid="$2" '
  BEGIN{split("NETWORK_FACTORY BLUETOOTH_PRIVILEGED CONNECTIVITY_USE_RESTRICTED_NETWORKS MANAGE_WIFI_INTERFACES LOCATION_HARDWARE INTERNET BLUETOOTH_SCAN BLUETOOTH_ADVERTISE NEARBY_WIFI_DEVICES ACCESS_FINE_LOCATION ACCESS_COARSE_LOCATION ACCESS_BACKGROUND_LOCATION",want," ");for(i in want)required[want[i]]=1}
  /^CURRENT_CODE_PROFILE=PASS$/{code++}
  /^CURRENT_GOOGLE_SIGNER=PASS$/{signer++}
- /^CURRENT_MOSEY_UID=10366$/{uid++}
+ /^CURRENT_MOSEY_UID=[0-9]+$/{split($0,a,"=");if(a[2]==expected_uid)uid++;else bad=1}
  /^CURRENT_PRIVILEGED=true$/{priv++}
  /^CURRENT_PROFILE_RESULT=PASS$/{ok++}
  /^CURRENT_PERMISSION=/{name=$1;sub(/^CURRENT_PERMISSION=/,"",name);if(name in required){seen[name]++;if($2=="REQUESTED=YES"&&$3=="GRANTED=YES")granted[name]++}}
- END{good=(code==1&&signer==1&&uid==1&&priv==1&&ok==1);for(k in required)if(seen[k]!=1||granted[k]!=1)good=0;exit !good}' "$1"
+ END{good=(code==1&&signer==1&&uid==1&&priv==1&&ok==1&&!bad);for(k in required)if(seen[k]!=1||granted[k]!=1)good=0;exit !good}' "$1"
 }

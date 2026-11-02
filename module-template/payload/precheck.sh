@@ -29,8 +29,9 @@ for view in self 1 "$app_system"; do
 done
 bind_capture "$OUT/binding-pre-package.txt" 8 dumpsys package "$BIND_PACKAGE" || fail PACKAGE_QUERY_FAILED
 bind_capture "$OUT/binding-current-code-profile.txt" 8 sh "$GT8_BINDDIR/current-code-profile.sh" || fail APP_IDENTITY_UNVERIFIED
-updated_code_profile_ok "$OUT/binding-current-code-profile.txt" && app_package_check_updated "$OUT/binding-pre-package.txt" || fail APP_IDENTITY_UNVERIFIED
 BIND_UID=$(bind_app_uid "$OUT/binding-pre-package.txt") || fail APP_UID_UNVERIFIED
+[ "$(gt8_user0_mosey_uid)" = "$BIND_UID" ] || fail APP_UID_UNVERIFIED
+updated_code_profile_ok "$OUT/binding-current-code-profile.txt" "$BIND_UID" && app_package_check_updated "$OUT/binding-pre-package.txt" || fail APP_IDENTITY_UNVERIFIED
 bind_core_permissions "$OUT/binding-pre-package.txt" || fail CORE_PRIVILEGES_MISSING
 app_permissions_check "$OUT/binding-pre-package.txt" runtime >/dev/null || fail RUNTIME_PERMISSIONS_MISSING
 bind_capture "$OUT/binding-pre-provider.txt" 8 cmd package query-services --components --query-flags 512 --user 0 -a com.google.android.nearby.SHARING_PROVIDER -p "$BIND_PACKAGE" || fail PROVIDER_QUERY_FAILED

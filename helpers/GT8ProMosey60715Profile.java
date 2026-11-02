@@ -36,7 +36,7 @@ public final class GT8ProMosey60715Profile {
    Context context=(Context)get.invoke(thread);PackageManager pm=context.getPackageManager();
    PackageInfo p=pm.getPackageInfo(PKG,PackageManager.GET_PERMISSIONS|PackageManager.GET_SIGNING_CERTIFICATES);
    ApplicationInfo a=p.applicationInfo;
-   require(p.getLongVersionCode()==60715&&a.uid==10366&&a.targetSdkVersion==37,"PACKAGE_VERSION_UID");
+   require(p.getLongVersionCode()==60715&&a.uid>=10000&&a.uid<20000&&a.targetSdkVersion==37,"PACKAGE_VERSION_UID");
    require((a.flags&ApplicationInfo.FLAG_SYSTEM)!=0&&(a.flags&ApplicationInfo.FLAG_UPDATED_SYSTEM_APP)!=0,"SYSTEM_UPDATE");
    String[] owners=pm.getPackagesForUid(a.uid);require(owners!=null&&owners.length==1&&PKG.equals(owners[0]),"UID_OWNER");
    Signature[] sig=p.signingInfo.getApkContentsSigners();require(sig.length==1&&digest(sig[0].toByteArray()).equals("82f90326951d14e08010b2a26cce329be2b09e74752158b7640e04a544676878"),"SIGNER");

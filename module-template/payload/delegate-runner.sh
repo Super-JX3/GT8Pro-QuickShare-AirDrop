@@ -22,7 +22,7 @@ record=$OUT/binding-app-record.txt
 app=$(awk -F= '$1=="PID"&&$2~/^[0-9]+$/{n++;v=$2}END{if(n==1)print v}' "$record")
 token=$(awk -F= '$1=="START_TOKEN"&&$2~/^[0-9]+$/{n++;v=$2}END{if(n==1)print v}' "$record")
 uid=$(awk -F= '$1=="UID"&&$2~/^[0-9]+$/{n++;v=$2}END{if(n==1)print v}' "$record")
-[ "$uid" = 10366 ] || exit 1
+[ "$(gt8_user0_mosey_uid)" = "$uid" ] || exit 1
 case "$app:$token" in *[!0-9:]*|:*|*:) exit 1;;esac
 stop_requested=0
 trap 'stop_requested=1' 1 2 15

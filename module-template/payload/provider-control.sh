@@ -23,7 +23,10 @@ case "$mode" in
  enable)
   . "$GT8_BINDDIR/updated-package-checks.sh"
   report=$(sh "$GT8_BINDDIR/current-code-profile.sh") || exit 1
-  printf '%s\n' "$report" | updated_code_profile_ok /dev/stdin || exit 1
+  expected_uid=$(gt8_user0_mosey_uid) || exit 1
+  uid_record=$OUT/binding-app-uid.txt
+  [ ! -L "$uid_record" ] && [ "$(stat -c '%u:%a' "$uid_record" 2>/dev/null)" = 0:600 ] && [ "$(cat "$uid_record")" = "$expected_uid" ] || exit 1
+  printf '%s\n' "$report" | updated_code_profile_ok /dev/stdin "$expected_uid" || exit 1
   [ -n "$(pidof mosey_server 2>/dev/null)" ] || exit 1
   (timeout -k 1 3 service check com.google.android.moseyservice.IMoseyService/default;printf '\n__PROVIDER_BINDER_RC=%s\n' "$?") 2>&1 | awk '
   /^Service com[.]google[.]android[.]moseyservice[.]IMoseyService\/default: found$/{n++;next}

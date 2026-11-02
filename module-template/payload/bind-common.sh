@@ -57,7 +57,15 @@ bind_app_uid() {
             line=$0;sub(/^[ ]+(userId|appId)=/,"",line);sub(/[ ]*$/,"",line)
             if(uid!=""&&uid!=line)bad=1;uid=line
         }
-        END {if(n==1&&!bad&&(uid+0)>=10000&&(uid+0)<100000)print uid;else exit 1}' "$1"
+        END {if(n==1&&!bad&&(uid+0)>=10000&&(uid+0)<20000)print uid;else exit 1}' "$1"
+}
+gt8_user0_mosey_uid() {
+    (timeout -k 1 5 cmd package list packages -U --user 0 com.google.android.mosey; printf '\n__UID_RC=%s\n' "$?") 2>&1 | awk '
+      /^package:com[.]google[.]android[.]mosey uid:[0-9]+$/ { n++;split($2,a,":");uid=a[2];next }
+      /^package:/ { next }
+      /^__UID_RC=0$/ { rc++;next }
+      NF {bad=1}
+      END {if(n==1&&rc==1&&!bad&&uid~/^[0-9]+$/&&uid>=10000&&uid<20000)print uid;else exit 1}'
 }
 bind_core_permissions() {
     awk '
@@ -192,6 +200,7 @@ bind_network_factory_granted() {
 
 gt8_mosey_main_pids() {
     gt8_scope_proc=${1:-/proc}
+    gt8_scope_target=$(gt8_user0_mosey_uid) || return 1
     gt8_scope_result=
     gt8_scope_seen='|'
     for gt8_scope_pid in $(pidof com.google.android.mosey 2>/dev/null); do
@@ -207,9 +216,9 @@ gt8_mosey_main_pids() {
         [ -d "$gt8_scope_proc/$gt8_scope_pid" ] || continue
         [ -n "$gt8_scope_before" ] && [ "$gt8_scope_before" = "$gt8_scope_after" ] && [ "$gt8_scope_cmd" = com.google.android.mosey ] || return 1
         case "$gt8_scope_uid" in ''|*[!0-9]*) return 1;;esac
-        if [ "$gt8_scope_uid" = 10366 ];then
+        if [ "$gt8_scope_uid" = "$gt8_scope_target" ];then
             gt8_scope_result="$gt8_scope_result $gt8_scope_pid"
-        elif [ "$gt8_scope_uid" -ge 100000 ] && [ "$((gt8_scope_uid % 100000))" = 10366 ];then
+        elif [ "$gt8_scope_uid" -ge 100000 ] && [ "$((gt8_scope_uid % 100000))" = "$gt8_scope_target" ];then
             : # Another Android user: inspect identity only and leave it untouched.
         else return 1;fi
     done

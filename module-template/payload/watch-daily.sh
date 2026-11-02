@@ -7,9 +7,9 @@ umask 077
 set -f
 case "${1:-probe}" in smoke-once) mode=smoke;once=1;; test-once) mode=probe;once=1;; renew-test) mode=renew-test;once=0;; probe) mode=probe;once=0;; *) exit 1;;esac
 [ "$(id -u)" = 0 ] && [ "$(cat /proc/self/attr/current)" = u:r:ksu:s0 ] || exit 1
-d=/data/adb/gt8pro-mosey-daily/runtime-integrated-v6
+d=/data/adb/gt8pro-mosey-daily/runtime-integrated-v7
 [ ! -L "$d" ] && [ "$(stat -c '%u:%a' "$d")" = 0:700 ] || exit 1
-for pair in 'recover-v9.sh:7bf803cee93d5a7e804373b0b1be0348ba3e65d88cbfc0a9033d46782e4e1001' 'watch-lock.sh:eb10d66c10839e5a5cd5dfbe5a1a952ec4f081484223308f26617b1d51ee2199' 'owner-guard.sh:180a2960f5cc0862ccb6329f92c067612248812f01d23c57641e149dac93bf40' 'watch-policy.sh:b1c9ee10fb33cd5550ec3978f64ecb1873437978da03475f9e3bbdbf89eaf8df' 'ui-common.sh:84c07d259b74fcda4ea9946617193deb7b3382712a220413ebfc58c3fde0eeb8' 'bind-common.sh:c9a1a8f66bedefcfed873f0052a3f9a3006b8157c96bf43b4eb685153da7fe0f' 'main.sh:1ba2cb133438477084c1d9c24e430468ebef3089394841966bbf56dfd633009f' 'transfer-idle.sh:e156907644bfdaecfd9dbc3e5d5df281d5fe3aeea2a65efd39825c55d3e87db2' 'check-helper.sh:7f0de53a50cc02ca7a8de35631ea54b704e7d005de771dfc4a4242828e5910e9';do
+for pair in 'recover-v9.sh:6290d90b038ad893b3421177e32d27ff7fd41dd8fbc4114f2ab30335c108486a' 'watch-lock.sh:eb10d66c10839e5a5cd5dfbe5a1a952ec4f081484223308f26617b1d51ee2199' 'owner-guard.sh:180a2960f5cc0862ccb6329f92c067612248812f01d23c57641e149dac93bf40' 'watch-policy.sh:b1c9ee10fb33cd5550ec3978f64ecb1873437978da03475f9e3bbdbf89eaf8df' 'ui-common.sh:84c07d259b74fcda4ea9946617193deb7b3382712a220413ebfc58c3fde0eeb8' 'bind-common.sh:e6a75e680b406e4a18f07ef1e9627e2cc02aeb20046ff44a6b996486d8d3ab7f' 'main.sh:5cbe50618781c00af2d712bbb8a3edf7f68a1856f870106ad312c8798be81fab' 'transfer-idle.sh:e156907644bfdaecfd9dbc3e5d5df281d5fe3aeea2a65efd39825c55d3e87db2' 'check-helper.sh:9663d692b0f6771ec628891257dbf8a654341ef3562e3231ffed8a81f4fa5325';do
  f=${pair%%:*};expected=${pair#*:}
  [ ! -L "$d/$f" ] && [ "$(stat -c '%u:%a' "$d/$f")" = 0:600 ] && [ "$(sha256sum "$d/$f" | cut -d ' ' -f1)" = "$expected" ] || exit 1
 done

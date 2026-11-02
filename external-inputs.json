@@ -1,5 +1,5 @@
 {
-  "version": "0.13.7-public-candidate",
+  "version": "0.13.8-dynamic-uid-candidate",
   "files": [
     {
       "path": "base-app/system/system_ext/etc/default-permissions/default-permissions-com.google.android.mosey.xml",
@@ -68,8 +68,8 @@
     },
     {
       "path": "payload/profile-helper.jar",
-      "sha256": "f26c49b24e41498de0cc6b16c552a2b3e76c76a14c1ebfd07dfc0b2f3476b6d2",
-      "size": 8388
+      "sha256": "a73ada1aa57ab77c4bb7826261225f17b8ce00387c70ff97704554f612c714a7",
+      "size": 8400
     },
     {
       "path": "system/odm/bin/mosey_load_probe",

@@ -5,7 +5,7 @@ REPLACE=""
 REMOVE=""
 export SKIPUNZIP REPLACE REMOVE
 [ "$BOOTMODE" = true ] && [ "$KSU" = true ] || abort '! 请在 KernelSU/SukiSU 中安装，不支持 recovery 安装。'
-[ -f "$MODPATH/install.sha256" ] && [ "$(sha256sum "$MODPATH/install.sha256" | cut -d ' ' -f1)" = 57eb43d3a1f707e6ea306826129a595b446f350b9d96639fdbcde0112c22e1e3 ] || abort '! 安装清单不匹配。'
+[ -f "$MODPATH/install.sha256" ] && [ "$(sha256sum "$MODPATH/install.sha256" | cut -d ' ' -f1)" = a697c40e7a1d8e2bb27c244ce06d9520c8f4164eab3a08aa9239e09b965647f6 ] || abort '! 安装清单不匹配。'
 (cd "$MODPATH" && sha256sum -c install.sha256 >/dev/null) || abort '! 安装文件校验失败。'
 MODDIR=$MODPATH/base-service
 . "$MODDIR/common.sh"
@@ -41,5 +41,5 @@ done
 set_perm "$MODPATH/base-service/tools/gt8_service_watchdog" 0 0 0755 u:object_r:system_file:s0
 set_perm "$MODPATH/service.sh" 0 0 0755
 ui_print '- 已整合原生服务、Mosey 系统应用和按需监听。'
-ui_print '- 使用 MoseyBridge 0.11.6，LSPosed 作用域维持 GMS 与 Mosey。'
+ui_print '- 使用现有 MoseyBridge 0.11.7，LSPosed 作用域维持 GMS 与 Mosey。'
 ui_print '- 重启后由系统加载整合模块。'

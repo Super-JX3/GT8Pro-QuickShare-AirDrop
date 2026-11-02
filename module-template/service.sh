@@ -7,12 +7,12 @@ umask 077
 set -f
 module=/data/adb/modules/gt8pro.mosey.integrated
 root=/data/adb/gt8pro-mosey-daily
-d=$root/runtime-integrated-v6
+d=$root/runtime-integrated-v7
 [ "$(id -u)" = 0 ] && [ "$(cat /proc/self/attr/current)" = u:r:ksu:s0 ] && [ "$(getenforce)" = Enforcing ] || exit 1
 [ "$(getprop ro.product.model)" = RMX5200 ] && [ "$(getprop ro.build.display.id)" = 'RMX5200_16.0.10.501(CN01)' ] || exit 1
 [ ! -L "$module" ] && [ -d "$module" ] && [ ! -L "$module/payload" ] && [ -d "$module/payload" ] || exit 1
 for flag in disable remove update;do [ ! -e "$module/$flag" ] && [ ! -L "$module/$flag" ] || exit 0;done
-[ ! -L "$module/payload.sha256" ] && [ "$(sha256sum "$module/payload.sha256" | cut -d ' ' -f1)" = c5ef92060536b5a5f09d2a4cc3973529f8778737e6d3ab5f2e7eb840ec9b6d86 ] || exit 1
+[ ! -L "$module/payload.sha256" ] && [ "$(sha256sum "$module/payload.sha256" | cut -d ' ' -f1)" = f25e06a81c663fc4ed0a3a85cb5d84d8543beed03d500246bde50f5d85d035a6 ] || exit 1
 [ ! -L "$root" ] || exit 1
 mkdir -m 0700 -p "$root" || exit 1
 [ "$(stat -c '%u:%a' "$root")" = 0:700 ] && [ "$(readlink -f "$root")" = "$root" ] || exit 1
@@ -74,13 +74,12 @@ export GT8_DAILY_MODULE
 # Retry a failed watcher only after verifying that its entire user-0 session
 # is absent. Blocked checks do not consume the watcher restart budget.
 # A bounded retry cannot establish a transfer admission barrier.
+. "$d/bind-common.sh"
 retry_quiet(){
  r=/data/adb/gt8pro-mosey-service
  [ ! -e "$r/action-lock" ] && [ ! -e "$r/watch-lock" ] && [ -z "$(pidof mosey_server)" ] || return 1
- for p in $(pidof com.google.android.mosey);do
-  uid=$(awk '/^Uid:/{print $2}' "/proc/$p/status" 2>/dev/null)
-  case "$uid" in ''|10366) return 1;;esac
- done
+ apps=$(gt8_mosey_main_pids) || return 1
+ [ -z "$apps" ] || return 1
  for svc in com.google.android.moseyservice.IMoseyService/default com.google.pixel.moseyservice.IMoseyService/default;do
   [ "$(timeout -k 1 3 service check "$svc" 2>&1)" = "Service $svc: not found" ] || return 1
  done
