@@ -16,6 +16,16 @@ python3 tools/assemble.py --input /path/to/local-inputs --input /path/to/older-l
 
 `dist/`、`local-inputs/` 和签名文件被 `.gitignore` 忽略。请不要上传原厂文件或本机原始模块 ZIP。
 
+## 重建项目辅助程序（实验）
+
+`tools/build-helpers.py` 可以用本地 Android 36 平台、build-tools 的 D8、NDK clang 和 JDK 17 编译两个 Java 辅助 JAR 及三个 arm64 守护程序，并生成这些输出的 SHA-256 清单：
+
+```sh
+python3 tools/build-helpers.py --android-jar /path/to/android-36/android.jar --d8-jar /path/to/build-tools/lib/d8.jar --ndk-clang /path/to/ndk/toolchains/llvm/prebuilt/HOST/bin/clang --jdk-bin /path/to/jdk/bin --output dist/helpers
+```
+
+此步骤已在本机工具链编译通过，但不会自动更新脚本中逐级固定的哈希、安装清单或桥 APK 签名；产物不能直接替换到发布包中，也尚未验证其与旧版二进制的设备行为一致。完整自建组包及其校验链生成仍待完成。原厂组件仍须另行取得并核验。
+
 ## LSPosed 桥
 
 `bridge/build.py` 是当前桥源码的构建入口，要求 Android 36 平台、Android 16 build-tools、Xposed API 82、JDK 17 和已有签名目录；脚本对指定工具包有固定哈希检查。其参数为 `--tools`、`--jdk`、`--out`、`--signing`。不要把签名目录、密钥或密码提交到仓库。
