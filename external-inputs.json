@@ -1,5 +1,5 @@
 {
-  "version": "0.13.8-dynamic-uid-candidate",
+  "version": "0.13.9-recovery-candidate",
   "files": [
     {
       "path": "base-app/system/system_ext/etc/default-permissions/default-permissions-com.google.android.mosey.xml",

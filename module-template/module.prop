@@ -1,6 +1,6 @@
 id=gt8pro.mosey.integrated
 name=GT8 Pro Quick Share AirDrop 综合模块
-version=0.13.8-dynamic-uid-candidate
-versionCode=1308
+version=0.13.9-recovery-candidate
+versionCode=1309
 author=GT8 Pro local development
 description=整合应用挂载、原生服务和按需生命周期；需要单独安装并启用 MoseyBridge LSPosed APK。

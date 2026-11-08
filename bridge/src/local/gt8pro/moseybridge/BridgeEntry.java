@@ -40,7 +40,7 @@ public final class BridgeEntry implements IXposedHookLoadPackage {
                 }
             });
             s.emit("SESSION_STARTED","mode="+BuildVariant.MODE);
-            s.emit("MODULE_REVISION","value=1107");
+            s.emit("MODULE_REVISION","value=1108");
             s.emit("SESSION_LIMIT","seconds=86400");
         } catch(Throwable failure){s.emit("SETUP_REJECTED","reason=ATTACH_HOOK");s.stop();}
     }

@@ -5,7 +5,7 @@ export PATH
 umask 077
 set -f
 [ "$(id -u)" = 0 ] && [ "$(cat /proc/self/attr/current)" = u:r:ksu:s0 ] && [ "$(getenforce)" = Enforcing ] || exit 1
-root=/data/adb/gt8pro-mosey-daily/runtime-integrated-v7
+root=/data/adb/gt8pro-mosey-daily/runtime-integrated-v8
 [ ! -L "$root" ] || exit 1
 [ "$(stat -c '%u:%a' "$root")" = 0:700 ] && [ "$(readlink -f "$root")" = "$root" ] || exit 1
 jar=$root/profile-helper.jar

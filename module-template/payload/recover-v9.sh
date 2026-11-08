@@ -6,19 +6,31 @@ umask 077
 [ "$(id -u)" = 0 ] && [ "$(cat /proc/self/attr/current)" = u:r:ksu:s0 ] && [ "$(getenforce)" = Enforcing ] || exit 1
 r=/data/adb/gt8pro-mosey-service;run=$(cat "$r/current");case "$run" in run.??????) ;;*)exit 1;;esac
 d=$r/$run;b=$d/binding-code
+recovery_owned=0
+case "${1:-watcher}" in
+ supervisor) mkdir -m 700 "$r/watch-recovery-lock" 2>/dev/null || exit 1; recovery_owned=1;;
+ watcher) [ -d "$r/watch-recovery-lock" ] && [ ! -L "$r/watch-recovery-lock" ] || exit 1;;
+ *) exit 1;;
+esac
+cleanup_recovery(){ [ "$recovery_owned" = 0 ] || rmdir "$r/watch-recovery-lock" 2>/dev/null; }
+trap cleanup_recovery 0
 [ ! -L "$d" ] && [ "$(stat -c '%u:%a' "$d")" = 0:700 ] || exit 1
-w=$r/watch-lock/owner
-[ ! -L "$w" ] && [ "$(stat -c '%u:%a' "$w" 2>/dev/null)" = 0:600 ] || exit 1
-read wp wt wx <"$w" || exit 1
+# The watcher can have exited cleanly and removed its lock after an emergency.
+# The immutable session record still identifies the watcher that owned this run.
+wr=$d/watcher-owner.record
+[ ! -L "$wr" ] && [ "$(stat -c '%u:%a' "$wr" 2>/dev/null)" = 0:600 ] || exit 1
+read wp wt wx <"$wr" || exit 1
 case "$wp:$wt" in *[!0-9:]*|:*|*:) exit 1;;esac
 [ -z "$wx" ] && [ "$(awk 'NR==1{sub(/^.*[)] /,"");print $20}' "/proc/$wp/stat" 2>/dev/null)" != "$wt" ] || exit 1
-wr=$d/watcher-owner.record
-[ ! -L "$wr" ] && [ "$(stat -c '%u:%a' "$wr" 2>/dev/null)" = 0:600 ] && [ "$(cat "$wr")" = "$wp $wt" ] || exit 1
+if [ -e "$r/watch-lock" ] || [ -L "$r/watch-lock" ];then
+ w=$r/watch-lock/owner
+ [ ! -L "$r/watch-lock" ] && [ ! -L "$w" ] && [ "$(stat -c '%u:%a' "$w" 2>/dev/null)" = 0:600 ] && [ "$(cat "$w")" = "$wp $wt" ] || exit 1
+fi
 [ "$(sha256sum "$b/bind-common.sh" | cut -d ' ' -f1)" = e6a75e680b406e4a18f07ef1e9627e2cc02aeb20046ff44a6b996486d8d3ab7f ] || exit 1
 [ "$(sha256sum "$b/handoff-lock.sh" | cut -d ' ' -f1)" = b30ce8a43d9d6ab7390ff8d221bcb9cd0a03d666a3ac3b4d5dffe91a100ba892 ] || exit 1
 . "$b/handoff-lock.sh"
 gt8_handoff_lock "$r/mutation.lock" || exit 1
-trap 'gt8_handoff_unlock' 0
+trap 'gt8_handoff_unlock; cleanup_recovery' 0
 read ctrl tok extra <"$d/soak-controller.record" || exit 1
 case "$ctrl:$tok" in *[!0-9:]*|:*|*:)exit 1;;esac
 [ -z "$extra" ] && [ "$(awk 'NR==1{sub(/^.*[)] /,"");print $20}' "/proc/$ctrl/stat" 2>/dev/null)" != "$tok" ] || exit 1

@@ -10,7 +10,7 @@ unset LD_PRELOAD LD_LIBRARY_PATH MOSEY_REGISTRATION_COMPAT
 umask 077
 set -f
 printf 'GT8PRO_APP_BINDING_REPORT_V1\n'
-echo PACKAGE_VERSION=0.13.8-dynamic-uid-candidate
+echo PACKAGE_VERSION=0.13.9-recovery-candidate
 echo TEST_TRIGGER=BOUNDED_CONTINUOUS_SOAK
 [ "$(id -u)" = 0 ] || { echo RESULT=ROOT_REQUIRED; exit 1; }
 [ "$(cat /proc/self/attr/current 2>/dev/null)" = u:r:ksu:s0 ] \
@@ -93,7 +93,7 @@ bind_bootstrap_ok() {
     b_sum=$(sha256sum "$GT8_BINDDIR/gt8_service_watchdog_soak") || return 1
     [ "${b_sum%% *}" = ff319e66b79a00a6ec3a9605ac7b60b24071c684393c98719f8729d39143c24a ] || return 1
     b_sum=$(sha256sum "$GT8_BINDDIR/current-code-profile.sh") || return 1
-    [ "${b_sum%% *}" = 7fb91a14085dc40baecda8ff94b44ac81cb180036c6e592ea8b9a72bccfca8c2 ] || return 1
+    [ "${b_sum%% *}" = 08536eb301ffbb86d4c3730e130baa3ae23b2978e37bcf46126882b3a51d3ce8 ] || return 1
     b_sum=$(sha256sum "$GT8_BINDDIR/updated-package-checks.sh") || return 1
     [ "${b_sum%% *}" = 6f91973ddc2eba7d12a8620d5544f067be1e3472331a1efdaa45718d5d321d69 ] || return 1
     b_sum=$(sha256sum "$GT8_BINDDIR/app-stream.sh" 2>/dev/null) || return 1

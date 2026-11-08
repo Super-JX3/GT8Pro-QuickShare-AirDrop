@@ -7,12 +7,12 @@ umask 077
 set -f
 module=/data/adb/modules/gt8pro.mosey.integrated
 root=/data/adb/gt8pro-mosey-daily
-d=$root/runtime-integrated-v7
+d=$root/runtime-integrated-v8
 [ "$(id -u)" = 0 ] && [ "$(cat /proc/self/attr/current)" = u:r:ksu:s0 ] && [ "$(getenforce)" = Enforcing ] || exit 1
 [ "$(getprop ro.product.model)" = RMX5200 ] && [ "$(getprop ro.build.display.id)" = 'RMX5200_16.0.10.501(CN01)' ] || exit 1
 [ ! -L "$module" ] && [ -d "$module" ] && [ ! -L "$module/payload" ] && [ -d "$module/payload" ] || exit 1
 for flag in disable remove update;do [ ! -e "$module/$flag" ] && [ ! -L "$module/$flag" ] || exit 0;done
-[ ! -L "$module/payload.sha256" ] && [ "$(sha256sum "$module/payload.sha256" | cut -d ' ' -f1)" = f25e06a81c663fc4ed0a3a85cb5d84d8543beed03d500246bde50f5d85d035a6 ] || exit 1
+[ ! -L "$module/payload.sha256" ] && [ "$(sha256sum "$module/payload.sha256" | cut -d ' ' -f1)" = ad09d0cd54195c77289b5c5f3d2e1694622f2f0240ed8dc7183b30ac34f8b311 ] || exit 1
 [ ! -L "$root" ] || exit 1
 mkdir -m 0700 -p "$root" || exit 1
 [ "$(stat -c '%u:%a' "$root")" = 0:700 ] && [ "$(readlink -f "$root")" = "$root" ] || exit 1
@@ -78,6 +78,9 @@ export GT8_DAILY_MODULE
 retry_quiet(){
  r=/data/adb/gt8pro-mosey-service
  [ ! -e "$r/action-lock" ] && [ ! -e "$r/watch-lock" ] && [ -z "$(pidof mosey_server)" ] || return 1
+ # Recover only a recorded, identity-verified orphan after the old watcher exits.
+ apps=$(gt8_mosey_main_pids) || return 1
+ if [ -n "$apps" ];then sh "$d/recover-v9.sh" supervisor || return 1;fi
  apps=$(gt8_mosey_main_pids) || return 1
  [ -z "$apps" ] || return 1
  for svc in com.google.android.moseyservice.IMoseyService/default com.google.pixel.moseyservice.IMoseyService/default;do

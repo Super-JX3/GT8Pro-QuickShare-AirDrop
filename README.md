@@ -50,4 +50,6 @@ python3 tools/assemble.py --input /path/to/local-verified-inputs --output dist/G
 
 项目代码遵循 [Apache-2.0](LICENSE)，并保留 [NOTICE](NOTICE) 与模块内第三方声明。外部 Google/厂商资产不因本项目许可而获得再分发授权。设计参考 [moseyPLK-public](https://github.com/swift-lee/moseyPLK-public) 的 Apache-2.0 代码，以及 [OPAirDrop](https://github.com/Weverses/OPAirDrop) 的 GPL-3.0-only 回调思路；本仓库没有包含其 APK 补丁脚本或厂商固件。详见 [来源和边界](docs/ATTRIBUTION.md)。
 
-当前源码是 0.13.8 动态 UID 实验候选；旧版 0.13.7 的固定 UID 限制仍适用。候选仍存在会话目录累计、桥接 24 小时到期、升级运行目录及自有组件重建限制，尚不适合宣传为通用稳定版。
+0.13.8 是动态 UID 实验候选；旧版 0.13.7 的固定 UID 限制仍适用。候选仍存在会话目录累计、桥接 24 小时到期、升级运行目录及自有组件重建限制，尚不适合宣传为通用稳定版。
+
+0.13.9 / 0.11.8 为重启按钮与异常恢复实验候选。按钮需要在 KernelSU/SukiSU 中授予桥 APK Root；已在 GT8 Pro 待机状态验证点击按钮后启动服务；传输中保护、异常恢复和实际收发仍需验证。历史会话清理、24 小时桥接过期、从源码生成完整校验链及长期稳定性仍未解决。请勿将候选称为通用稳定版。

@@ -1,3 +1,5 @@
+> 当前源码为 0.13.9 / 0.11.8 实验候选，需成对安装。新按钮需要 Root 授权；已在待机状态验证按钮启动服务；异常恢复和传输中保护尚未完成实机验证。
+
 > 当前源码为 0.13.8 动态 UID 实验候选，已在原测试设备验证启动及一次 iPhone 接收；其他设备及长期稳定性尚未验证。仍需处理 24 小时桥接到期、历史会话目录累积、升级迁移和从源码重建。
 
 # 安装、使用与回滚
@@ -12,13 +14,15 @@
 
 ## 安装
 
-1. 从主用户安装 `releases/GT8Pro-MoseyBridge-0.11.7.apk`。如果已有其他签名的同包名应用，Android 会拒绝覆盖；先检查签名和备份，勿直接清除数据。
+1. 从主用户安装 `releases/GT8Pro-MoseyBridge-0.11.8.apk`。如果已有其他签名的同包名应用，Android 会拒绝覆盖；先检查签名和备份，勿直接清除数据。
 2. 在 LSPosed 启用 `local.gt8pro.moseybridge`，仅选择主用户的 `com.google.android.gms` 和 `com.google.android.mosey` 两个作用域。
 3. 如已使用旧的 `gt8pro.mosey.servicetest`、`gt8pro.mosey.appstage`、`gt8pro.mosey.daily`，在管理器中禁用它们并保留备份。确保没有正在进行的分享。
-4. 在 KernelSU/SukiSU 管理器选择本地组装的 `GT8Pro-QuickShare-0.13.8.zip` 安装。模块 ID 为 `gt8pro.mosey.integrated`，不是刷机包，不要使用系统刷机工具。
+4. 在 KernelSU/SukiSU 管理器选择本地组装的 `GT8Pro-QuickShare-0.13.9.zip` 安装。模块 ID 为 `gt8pro.mosey.integrated`，不是刷机包，不要使用系统刷机工具。
 5. 正常重启并首次解锁手机；确认管理器中模块已启用、LSPosed 作用域仍正确。
 
 0.13.7 / 0.11.6 是公开版重建候选，已在指定测试机通过一次重启启动与 iPhone→Android 接收；反向、并发和长期稳定性仍未重新验收。在不同设备上操作前请等待对应验证。安装器和运行脚本会针对固定机型、固件、文件哈希及权限进行检查。
+
+在 KernelSU/SukiSU 的超级用户列表中为桥 APK 授予 Root，打开桥 APK 点击“重启分享服务”。此候选会检查空闲状态；如果现有会话未停止，会提示稍后再试。Root 授权给予该 APK 系统管理员权限。
 
 ## 验证
 
