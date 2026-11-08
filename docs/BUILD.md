@@ -1,20 +1,20 @@
 # 构建与输入边界
 
-## 组装已固定的整合包
+## 一键组装实验模块
 
-`external-inputs.json` 列出构建 0.13.9 所需但未提交的文件路径、长度与 SHA-256。输入包括原厂 Mosey APK、vendor/launcher 文件、权限 XML 和项目生成的守护及辅助二进制。由于重定位和重复挂载，清单中的多个目标可能对应同一内容哈希。
-
-在本机准备拥有合法使用权的文件；可通过重复 `--input` 传入目录、单文件或 ZIP：
+安装 Python 3，在仓库根目录创建 `local-inputs/`，将有合法使用权的匹配组件文件放入该目录，再执行：
 
 ```sh
-python3 tools/assemble.py --input /path/to/local-inputs --input /path/to/older-local-module.zip --output dist/module.zip
+python3 build.py
 ```
 
-工具按固定内容哈希匹配，不依赖输入文件名；缺项会列出哈希并停止。模板脚本携带改动声明，组装时移除固定的声明行，再验证 `install.sha256` 和安装脚本中的清单哈希。公开模板仅将安装器里桥版本提示为 0.11.8；该提示不在安装清单内。它不会生成缺少的二进制，也不会把不同版本的文件冒充兼容文件。
+输出为 `dist/GT8Pro-QuickShare-0.13.9.zip`。也可用 `python3 build.py --input /path/to/local-files` 指定本地目录、ZIP 或单个文件；`--input` 可重复，`--output` 可更改输出路径。脚本不会下载或上传本地输入。
 
-辅助源码在 `native/` 和 `helpers/`，可用下述实验脚本编译，但目前尚无经验证的一键重建和组包流程；即使功能等效，重编译二进制哈希不同也会被当前组包器拒绝。先前本机生成的整合 ZIP 可作为固定二进制来源。此限制意味着新的使用者不能仅凭公开仓库完成组装。
+仓库的 `releases/GT8Pro-project-helpers-0.13.9.zip` 提供本项目五个固定版本辅助程序，源码分别位于 `helpers/`、`native/` 和 `module-template/base-service/source/`；它们不再要求从旧整合 ZIP 获取。`external-inputs.json` 仍对所有输入按长度与 SHA-256 匹配，并验证安装清单的完整校验链；缺项会列出后退出。
 
-`dist/`、`local-inputs/` 和签名文件被 `.gitignore` 忽略。请不要上传原厂文件或本机原始模块 ZIP。
+**输入限制：**仍需另行取得清单中未公开的原厂 APK、服务、库、launcher 和权限 XML；此外，`mosey_load_probe`、`libmosey_load_probe.so` 和 `libmosey_registration_compat.so` 的固定二进制目前也尚未随仓库提供，也没有完整的公开重建路径。这些文件可由用户有权使用的历史模块中提取；因此该入口仍不能让全新用户仅凭仓库构建。不能通过关闭哈希检查来绕过缺项。
+
+辅助程序 ZIP 是已发布的固定构建，不等于可复现构建；下方实验性源码编译尚不能自动更新整个校验链。`dist/`、`local-inputs/` 和签名文件被 `.gitignore` 忽略，请勿上传原厂文件或本机原始模块 ZIP。
 
 ## 重建项目辅助程序（实验）
 
