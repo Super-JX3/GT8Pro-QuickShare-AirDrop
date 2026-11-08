@@ -31,13 +31,9 @@ Live Photo 的动态部分和 Android 相册显示兼容性尚未完成验证。
 
 `releases/GT8Pro-MoseyBridge-0.11.6.apk` 是经过个人信息清理后重建的桥 APK。0.13.7 / 0.11.6 在测试机上通过了重启启动和一次 iPhone→Android 接收：进度短暂停在 25% 后显示“已接收”，日志记录了真实完成回调的补送。该文件未做两端独立哈希比较；反向传输、并发和长期稳定性未在此版本重新验收。不要将主机测试当作手机验收。
 
-整合 ZIP 含 Google、设备厂商或外部构建输入，仓库不提供这些文件。需要从有权使用的本地来源准备 `external-inputs.json` 中全部固定哈希的输入，包括原厂文件和项目生成的辅助二进制。当前组包器要求完全匹配的输入，**仅有本仓库不足以从零生成安装包**。例如，已有的本地 0.13.6 整合 ZIP 可作为输入：
+从 [0.13.9-rc Release](https://github.com/Super-JX3/GT8Pro-QuickShare-AirDrop/releases/tag/v0.13.9-rc) 下载整合模块 ZIP 和 0.11.8 桥 APK。整合 ZIP 包含 Google 和厂商组件；项目代码的开源许可不覆盖这些外部组件。
 
-```sh
-python3 build.py --input /path/to/local-verified-inputs
-```
-
-组包器只在本机按 SHA-256 匹配文件、验证安装清单并输出 ZIP，不下载或上传材料。不要将私人输入、固件、系统 APK、签名密钥或自己的测试日志提交到 GitHub。构建细节与限制见 [构建说明](docs/BUILD.md)。
+也可使用 `python3 build.py --input /path/to/local-verified-inputs` 在本地组装。组包工具按 SHA-256 匹配输入并验证安装清单；从零重建所需的三个固定辅助二进制目前仍未公开，详见 [构建说明](docs/BUILD.md)。请勿提交签名密钥或个人测试日志。
 
 安装步骤、验证、回滚和已知限制见 [安装与使用](docs/INSTALL.md)。模块 ZIP 是管理器安装包，**不是整机刷机包**。
 
