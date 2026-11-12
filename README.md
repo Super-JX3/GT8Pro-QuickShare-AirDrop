@@ -31,7 +31,7 @@ Live Photo 的动态部分和 Android 相册显示兼容性尚未完成验证。
 
 `releases/GT8Pro-MoseyBridge-0.11.6.apk` 是经过个人信息清理后重建的桥 APK。0.13.7 / 0.11.6 在测试机上通过了重启启动和一次 iPhone→Android 接收：进度短暂停在 25% 后显示“已接收”，日志记录了真实完成回调的补送。该文件未做两端独立哈希比较；反向传输、并发和长期稳定性未在此版本重新验收。不要将主机测试当作手机验收。
 
-从 [0.13.9-rc Release](https://github.com/Super-JX3/GT8Pro-QuickShare-AirDrop/releases/tag/v0.13.9-rc) 下载整合模块 ZIP 和 0.11.8 桥 APK。整合 ZIP 包含 Google 和厂商组件；项目代码的开源许可不覆盖这些外部组件。
+从 [0.14.1-rc Release](https://github.com/Super-JX3/GT8Pro-QuickShare-AirDrop/releases/tag/v0.14.1-rc) 下载整合模块 ZIP 和 0.11.9 桥 APK。整合 ZIP 包含 Google 和厂商组件；项目代码的开源许可不覆盖这些外部组件。
 
 也可使用 `python3 build.py --input /path/to/local-verified-inputs` 在本地组装。组包工具按 SHA-256 匹配输入并验证安装清单；从零重建所需的三个固定辅助二进制目前仍未公开，详见 [构建说明](docs/BUILD.md)。请勿提交签名密钥或个人测试日志。
 
@@ -51,3 +51,5 @@ Live Photo 的动态部分和 Android 相册显示兼容性尚未完成验证。
 0.13.9 / 0.11.8 为重启按钮与异常恢复实验候选。按钮需要在 KernelSU/SukiSU 中授予桥 APK Root；已在 GT8 Pro 待机状态验证点击按钮后启动服务；传输中保护、异常恢复和实际收发仍需验证。历史会话清理、24 小时桥接过期、从源码生成完整校验链及长期稳定性仍未解决。请勿将候选称为通用稳定版。
 
 0.13.9 的一键组装入口为 `python3 build.py`；仍需本地提供匹配的原厂文件和三个尚未公开的固定辅助二进制，详见 [构建说明](docs/BUILD.md)。
+
+0.14.1 / 0.11.9 为界面与挂载布局实验候选：已在测试机检查深浅色界面、开机文件挂载及按钮启动 Binder/代理；该次挂载依赖手动补齐 Hybrid Mount 缓存，自动同步、传输中保护、异常恢复及本版本实际文件收发尚未验证。

@@ -35,5 +35,5 @@ apk=$( (
  END{if(markers==1&&rc==0&&n==1&&!bad)print v;else exit 1}') || exit 1
 
 sum=$(sha256sum "$apk") || exit 1
-[ "${sum%% *}" = 0fad4379f9116248a38894d5233df7d577393146a67f6e17e1cae1f0b8842de1 ] || exit 1
+[ "${sum%% *}" = dd2cc51bbe8738fcb8adc1a6bd81fc08694276610719c65a5ed5f629800707a5 ] || exit 1
 CLASSPATH="$ROOT/activation-helper.jar" timeout -k 1 12 /system/bin/app_process /system/bin GT8ProLSPosedSetup --check /data/adb/lspd/config/modules_config.db "$apk"

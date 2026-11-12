@@ -1,3 +1,5 @@
+> 当前源码为 0.14.1 / 0.11.9 实验候选。
+
 # 构建与输入边界
 
 ## 一键组装实验模块
@@ -8,7 +10,7 @@
 python3 build.py
 ```
 
-输出为 `dist/GT8Pro-QuickShare-0.13.9.zip`。也可用 `python3 build.py --input /path/to/local-files` 指定本地目录、ZIP 或单个文件；`--input` 可重复，`--output` 可更改输出路径。脚本不会下载或上传本地输入。
+输出为 `dist/GT8Pro-QuickShare-0.14.1.zip`。也可用 `python3 build.py --input /path/to/local-files` 指定本地目录、ZIP 或单个文件；`--input` 可重复，`--output` 可更改输出路径。脚本不会下载或上传本地输入。
 
 仓库的 `releases/GT8Pro-project-helpers-0.13.9.zip` 提供本项目五个固定版本辅助程序，源码分别位于 `helpers/`、`native/` 和 `module-template/base-service/source/`；它们不再要求从旧整合 ZIP 获取。`external-inputs.json` 仍对所有输入按长度与 SHA-256 匹配，并验证安装清单的完整校验链；缺项会列出后退出。
 
@@ -30,7 +32,7 @@ python3 tools/build-helpers.py --android-jar /path/to/android-36/android.jar --d
 
 `bridge/build.py` 是当前桥源码的构建入口，要求 Android 36 平台、Android 16 build-tools、Xposed API 82、JDK 17 和已有签名目录；脚本对指定工具包有固定哈希检查。其参数为 `--tools`、`--jdk`、`--out`、`--signing`。不要把签名目录、密钥或密码提交到仓库。
 
-仓库提供的 0.11.8 APK 为发布时本地构建；自己用其他签名或修改源码构建的 APK 会得到不同哈希，而模块模板固定接受发布 APK 的哈希。要使用自编译 APK，必须同步更新 `check-helper.sh`、所有依赖哈希和安装清单，再经过完整测试；不要只改一个检查或禁用校验。
+仓库提供的 0.11.9 APK 为发布时本地构建；自己用其他签名或修改源码构建的 APK 会得到不同哈希，而模块模板固定接受发布 APK 的哈希。要使用自编译 APK，必须同步更新 `check-helper.sh`、所有依赖哈希和安装清单，再经过完整测试；不要只改一个检查或禁用校验。
 
 主机测试示例：
 

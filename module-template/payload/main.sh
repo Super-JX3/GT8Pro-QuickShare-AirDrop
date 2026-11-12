@@ -93,7 +93,7 @@ bind_bootstrap_ok() {
     b_sum=$(sha256sum "$GT8_BINDDIR/gt8_service_watchdog_soak") || return 1
     [ "${b_sum%% *}" = ff319e66b79a00a6ec3a9605ac7b60b24071c684393c98719f8729d39143c24a ] || return 1
     b_sum=$(sha256sum "$GT8_BINDDIR/current-code-profile.sh") || return 1
-    [ "${b_sum%% *}" = 08536eb301ffbb86d4c3730e130baa3ae23b2978e37bcf46126882b3a51d3ce8 ] || return 1
+    [ "${b_sum%% *}" = 51d034e65d03df7cc21f9979aa5f89907ba0b2411d3cbc20cfc24ab59e6f4620 ] || return 1
     b_sum=$(sha256sum "$GT8_BINDDIR/updated-package-checks.sh") || return 1
     [ "${b_sum%% *}" = 6f91973ddc2eba7d12a8620d5544f067be1e3472331a1efdaa45718d5d321d69 ] || return 1
     b_sum=$(sha256sum "$GT8_BINDDIR/app-stream.sh" 2>/dev/null) || return 1

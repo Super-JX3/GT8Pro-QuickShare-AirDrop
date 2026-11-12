@@ -7,7 +7,7 @@ umask 077
 set -f
 m=/data/adb/modules/gt8pro.mosey.integrated
 root=/data/adb/gt8pro-mosey-service
-d=/data/adb/gt8pro-mosey-daily/runtime-integrated-v8
+d=/data/adb/gt8pro-mosey-daily/runtime-integrated-v9
 [ "$(id -u)" = 0 ] && [ "$(cat /proc/self/attr/current)" = u:r:ksu:s0 ] && [ "$(getenforce)" = Enforcing ] || { echo MODULE_UNAVAILABLE; exit 1; }
 [ ! -L "$m" ] && [ -d "$m" ] && [ ! -e "$m/disable" ] && [ ! -e "$m/remove" ] && [ ! -e "$m/update" ] || { echo MODULE_UNAVAILABLE; exit 1; }
 [ ! -L "$d" ] && [ "$(stat -c '%u:%a' "$d")" = 0:700 ] && [ "$(readlink -f "$d")" = "$d" ] || { echo MODULE_UNAVAILABLE;exit 1; }

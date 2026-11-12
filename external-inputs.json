@@ -1,5 +1,5 @@
 {
-  "version": "0.13.9-recovery-candidate",
+  "version": "0.14.1-ui-candidate",
   "files": [
     {
       "path": "base-app/system/system_ext/etc/default-permissions/default-permissions-com.google.android.mosey.xml",
