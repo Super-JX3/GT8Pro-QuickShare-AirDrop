@@ -25,6 +25,9 @@ case "$controller:$token" in *[!0-9:]*|:*|*:) exit 1;;esac
 [ -z "$extra" ] || exit 1
 reason=EMERGENCY
 while :; do
+    if [ -f "$OUT/binding-guard-abort.txt" ] && [ "$(cat "$OUT/binding-guard-abort.txt")" = ABORT ]; then
+        reason=EMERGENCY;break
+    fi
     if [ -f "$OUT/binding-guard-release.txt" ] && [ "$(cat "$OUT/binding-guard-release.txt")" = RELEASE ]; then
         echo RELEASED >"$OUT/binding-guard-status.txt";exit 0
     fi

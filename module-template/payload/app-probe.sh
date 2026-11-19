@@ -66,6 +66,16 @@ start_delegate(){
  stop_delegate || :
  return 1
 }
+# Allow brief foreground transitions while the app and provider initialize.
+ui_wait_for_adopt(){
+ attempt=0
+ while [ "$attempt" -lt 20 ];do
+  state=$(ui_state) || state=UNCONFIRMED
+  [ "$state" = TARGET_TOP ] && return 0
+  attempt=$((attempt+1));sleep 0.5
+ done
+ return 1
+}
 BIND_CLEAN=false
 cleanup() {
     cleanup_rc=$?
@@ -78,7 +88,14 @@ cleanup() {
             gt8_handoff_unlock
         fi
     fi
-    if [ -n "$BIND_GUARD" ]; then wait "$BIND_GUARD" 2>/dev/null || :; fi
+    if [ -n "$BIND_GUARD" ]; then
+        # Wake the independent guard on early abort instead of waiting for the
+        # full session deadline. The guard still performs its own owner check.
+        (set -C; echo ABORT >"$OUT/binding-guard-abort.txt") 2>/dev/null || :
+        n=0
+        while [ "$n" -lt 12 ] && kill -0 "$BIND_GUARD" 2>/dev/null;do sleep 1;n=$((n+1));done
+        if ! kill -0 "$BIND_GUARD" 2>/dev/null;then wait "$BIND_GUARD" 2>/dev/null || :;else echo APP_GUARD=ABORT_PENDING;fi
+    fi
     exit "$cleanup_rc"
 }
 trap cleanup 0
@@ -134,7 +151,7 @@ if [ "$BIND_LAUNCH" = true ] && [ "$#" = 1 ]; then
         BIND_IDENTITY=true
         (set -C; printf 'PID=%s\nSTART_TOKEN=%s\nUID=%s\nSINCE=%s\n' "$BIND_PID" "$BIND_TOKEN" "$BIND_UID" "$BIND_SINCE" >"$OUT/binding-app-record.txt") || exit 1
         if [ -f "$OUT/binding-ui-warmup-report.txt" ];then
-            [ "$(ui_state)" = TARGET_TOP ] || exit 1
+            ui_wait_for_adopt || { echo SHARING_UI_START=FOCUS_TIMEOUT;exit 1; }
             bind_emit "$OUT/binding-ui-warmup-report.txt"
         elif ! sh "$GT8_BINDDIR/ui-start.sh" "$OUT";then exit 1;fi
         monitor_token=$(awk 'NR==1{sub(/^.*[)] /,"");print $20}' "/proc/$$/stat")

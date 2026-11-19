@@ -40,8 +40,8 @@ public final class BridgeEntry implements IXposedHookLoadPackage {
                 }
             });
             s.emit("SESSION_STARTED","mode="+BuildVariant.MODE);
-            s.emit("MODULE_REVISION","value=1109");
-            s.emit("SESSION_LIMIT","seconds=86400");
+            s.emit("MODULE_REVISION","value=1130");
+            s.emit("SESSION_LIMIT","scope=PROCESS_LIFETIME");
         } catch(Throwable failure){s.emit("SETUP_REJECTED","reason=ATTACH_HOOK");s.stop();}
     }
     private static final class Session {
@@ -74,8 +74,9 @@ public final class BridgeEntry implements IXposedHookLoadPackage {
         volatile int gmsUid=-1;
         Session(String p,ClassLoader l){
             pkg=p;loader=l;
-            deadline=started+86400000L;
-            workers.schedule(()->{emit("SESSION_EXPIRED","hooks=REMOVING");stop();},86400,TimeUnit.SECONDS);
+            // The verified hooks live with this process. Individual operations keep
+            // their existing preparation and inspection deadlines.
+            deadline=Long.MAX_VALUE;
         }
         void hook(Member method,XC_MethodHook callback) throws Exception {
             synchronized(lock){
@@ -123,8 +124,8 @@ public final class BridgeEntry implements IXposedHookLoadPackage {
             return c;
         }
         void installGms(ApplicationInfo info,long until)throws Exception{
-            Class<?> flags=target("kbfs",info,until);
-            Method getter=flags.getDeclaredMethod("V");
+            Class<?> flags=target("keky",info,until);
+            Method getter=flags.getDeclaredMethod("O");
             if(getter.getReturnType()!=boolean.class||Modifier.isStatic(getter.getModifiers())
                     ||Modifier.isNative(getter.getModifiers())||Modifier.isAbstract(getter.getModifiers()))
                 throw new Exception("GETTER_SIGNATURE");
@@ -145,7 +146,7 @@ public final class BridgeEntry implements IXposedHookLoadPackage {
                     }catch(Throwable ignored){/* Preserve the application's existing outcome. */}
                 }
             });
-            Class<?> registry=target("jadd",info,until);
+            Class<?> registry=target("jdhz",info,until);
             for(final String name:new String[]{"c","b"}){
                 Method method=registry.getDeclaredMethod(name);
                 if(method.getReturnType()!=void.class||Modifier.isStatic(method.getModifiers()))
@@ -183,6 +184,28 @@ public final class BridgeEntry implements IXposedHookLoadPackage {
                     String state=m==toggle&&call.args!=null&&call.args.length==1&&call.args[0] instanceof Boolean?(Boolean.TRUE.equals(call.args[0])?"TRUE":"FALSE"):"NONE";
                     emitCritical("GMS_SHARING_SERVICE_CALL","kind="+kind+" state="+state);
                 }});
+                try{
+                    final Method reeval=service.getDeclaredMethod("ac",boolean.class);
+                    final Field gate=service.getDeclaredField("av"), registryState=service.getDeclaredField("bF");
+                    if(reeval.getReturnType()!=void.class || Modifier.isStatic(reeval.getModifiers()) || !gate.getType().getName().equals("ieso") || registryState.getType()!=boolean.class)throw new Exception("TASK_SIGNATURE");
+                    gate.setAccessible(true);registryState.setAccessible(true);
+                    final AtomicInteger snapshots=new AtomicInteger();
+                    hook(reeval,new XC_MethodHook(){
+                        private void observe(MethodHookParam call,String phase){
+                            if(!active()||snapshots.incrementAndGet()>24)return;
+                            try{
+                                Object wrapper=gate.get(call.thisObject);String cache="UNKNOWN",kind="OTHER";
+                                if(wrapper!=null){String name=wrapper.getClass().getName();if(name.equals("iesr")||name.equals("iesq")){kind=name.equals("iesr")?"NON_SERIAL":"SERIAL";Field value=wrapper.getClass().getDeclaredField("c");value.setAccessible(true);Object raw=value.get(wrapper);cache=Boolean.TRUE.equals(raw)?"TRUE":Boolean.FALSE.equals(raw)?"FALSE":"UNSET";}}
+                                boolean registered=registryState.getBoolean(call.thisObject);
+                                String arg=call.args!=null&&call.args.length==1&&Boolean.TRUE.equals(call.args[0])?"TRUE":"FALSE";
+                                emit("GMS_GATE_SNAPSHOT","phase="+phase+" arg="+arg+" cache="+cache+" registry="+(registered?"TRUE":"FALSE")+" wrapper="+kind);
+                            }catch(Throwable ignored){emit("GMS_GATE_SNAPSHOT","phase="+phase+" result=UNAVAILABLE");}
+                        }
+                        @Override protected void beforeHookedMethod(MethodHookParam call){observe(call,"BEFORE");}
+                        @Override protected void afterHookedMethod(MethodHookParam call){observe(call,"AFTER");}
+                    });
+                    emit("GMS_GATE_OBSERVER_READY","kind=READONLY");
+                }catch(Throwable ignored){emit("GMS_GATE_OBSERVER_UNAVAILABLE","kind=READONLY");}
                 emitCritical("GMS_SERVICE_OBSERVER_READY","kind=READONLY");
             }catch(Throwable ignored){emitCritical("GMS_SERVICE_OBSERVER_UNAVAILABLE","kind=READONLY");}
         }

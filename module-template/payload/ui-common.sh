@@ -17,11 +17,17 @@ ui_state(){
  /^WINDOW MANAGER DISPLAY CONTENTS [(]dumpsys window displays[)]$/{windows++;w=1;next}
  /^WINDOW MANAGER DISPLAY CONTENTS [(]EXT[)]$/{w=0;next}
  /^__WIN_QUERY_RC=/{wm++;if($0!="__WIN_QUERY_RC=0")bad=1;next}
- w&&/^[ ]*Display: mDisplayId=/{displays++;display0=($0~/^[ ]*Display: mDisplayId=0[ ]/);if(!display0)bad=1;next}
+ w&&/^[ ]*Display: mDisplayId=/{displays++;display0=($0~/^[ ]*Display: mDisplayId=0[ ]/);if(display0)primary++;else other[displays]=1;next}
  w&&/mCurrentFocus=|mFocusedApp=/ {
   target=($0~/ u0 com[.]google[.]android[.]gms[\/](com[.]google[.]android[.]gms[.]|[.])nearby[.]sharing[.](main[.]MainActivity|receive[.]ReceiveActivity)[ }]/)
-  if($0~/mCurrentFocus=/){focus++;if(display0&&target)tfocus++}
-  if($0~/mFocusedApp=/){app++;if(display0&&target)tapp++}
+  if(!displays){bad=1;next}
+  if(display0){
+   if($0~/mCurrentFocus=/){focus++;if(target)tfocus++}
+   if($0~/mFocusedApp=/){app++;if(target)tapp++}
+  }else{
+   if($0~/mCurrentFocus=/){otherFocus[displays]++;if($0!~/^[ ]*mCurrentFocus=null[ ]*$/)bad=1}
+   if($0~/mFocusedApp=/){otherApp[displays]++;if($0!~/^[ ]*mFocusedApp=null[ ]*$/)bad=1}
+  }
   next
  }
  !w&&/ActivityRecord\{/ {
@@ -30,7 +36,8 @@ ui_state(){
   if(target&&$0~/topResumedActivity=|mResumedActivity:/)targettops++
  }
  END{
-  if(headers!=1||markers!=1||windows!=1||wm!=1||bad||rc!=0||displays!=1){print "UNCONFIRMED";exit 1}
+  for(i in other)if(otherFocus[i]!=1||otherApp[i]!=1)bad=1
+  if(headers!=1||markers!=1||windows!=1||wm!=1||bad||rc!=0||primary!=1){print "UNCONFIRMED";exit 1}
   if(!present)print "ABSENT"
   else if(targettops>=1&&focus==1&&tfocus==1&&app==1&&tapp==1)print "TARGET_TOP"
   else print "PRESENT_OTHER_TOP"

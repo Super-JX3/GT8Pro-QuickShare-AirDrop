@@ -1,0 +1,1 @@
+The files in `load-probe/` and `registration-compat/` are unmodified source files from [moseyPLK-public](https://github.com/swift-lee/moseyPLK-public), commit `afc3c38` (v0.7.0), under Apache-2.0. See the project LICENSE and NOTICE. Rebuilt binaries differ from previously shipped binaries and have not been device-tested.

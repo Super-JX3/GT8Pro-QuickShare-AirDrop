@@ -12,7 +12,7 @@ import java.util.*;
 
 /** Check the defining loader; never open a new target DexFile or run target code. */
 final class SourceGuard {
-    static final String GMS_SHA="0a0af2a2c44c459a0dded52cb7e176704d640ae738980d12360697cf96c8da4e";
+    static final String GMS_SHA="8395c70a5e4ffbe2712aea7e1045d700b282f0a67d19b80686c595c991f12112";
     static final String MOSEY_SHA="7ab2deaea6c9c2bdd5ba0f935d6143c115f5ceb11cb8b63066496ad27a28da49";
     private SourceGuard() {}
     static void time(long deadline) throws Exception {

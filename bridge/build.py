@@ -25,18 +25,26 @@ def main():
   with logs.open('a') as log:log.write(r.stdout+r.stderr)
   if r.returncode:raise RuntimeError('Build command failed; inspect private build log')
   return r.stdout+r.stderr
- # This identity belongs only to this new local module. Never included in outputs.
- signing=a.signing.resolve();assert signing.is_dir();assert (signing/'password.txt').is_file() and (signing/'gt8-local.p12').is_file()
+ # A local signing identity is created only when both files are absent. Never
+ # replace an existing identity: Android upgrades require the same signer.
+ signing=a.signing.resolve();signing.mkdir(mode=0o700,parents=True,exist_ok=True)
  pw=signing/'password.txt';ks=signing/'gt8-local.p12'
- if not pw.exists():
+ if pw.is_symlink() or ks.is_symlink():raise SystemExit('Signing files must not be symlinks')
+ if pw.exists()!=ks.exists():raise SystemExit('Incomplete signing identity; preserve and restore both files')
+ created_identity=not pw.exists()
+ if created_identity:
   fd=os.open(pw,os.O_WRONLY|os.O_CREAT|os.O_EXCL,0o600)
   with os.fdopen(fd,'w') as f:f.write(secrets.token_urlsafe(32))
  env=os.environ.copy();env['GT8_MODULE_SIGNING_PASS']=pw.read_text()
- if not ks.exists():
-  run([jdk/'keytool','-genkeypair','-keystore',ks,'-storetype','PKCS12','-alias','gt8-local',
-       '-keyalg','RSA','-keysize','3072','-validity','3650','-dname','CN=GT8 Pro Local Experimental Module',
-       '-storepass:env','GT8_MODULE_SIGNING_PASS','-keypass:env','GT8_MODULE_SIGNING_PASS'],env)
-  ks.chmod(0o600)
+ if created_identity:
+  try:
+   run([jdk/'keytool','-genkeypair','-keystore',ks,'-storetype','PKCS12','-alias','gt8-local',
+        '-keyalg','RSA','-keysize','3072','-validity','3650','-dname','CN=GT8 Pro Local Experimental Module',
+        '-storepass:env','GT8_MODULE_SIGNING_PASS','-keypass:env','GT8_MODULE_SIGNING_PASS'],env)
+   ks.chmod(0o600)
+  except Exception:
+   # These paths were just created by this invocation, never an old identity.
+   ks.unlink(missing_ok=True);pw.unlink(missing_ok=True);raise
  rows=[]
  modes=[('transfer-test',True,True)]
  for mode,gms,binder in modes:
@@ -49,13 +57,13 @@ def main():
   res=stage/'res/values';res.mkdir(parents=True,exist_ok=True)
   (res/'scope.xml').write_text('<resources><string-array name="scope"><item>com.google.android.gms</item><item>com.google.android.mosey</item></string-array></resources>')
   manifest=stage/'AndroidManifest.xml'
-  manifest.write_text('''<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="local.gt8pro.moseybridge" android:versionCode="1109" android:versionName="0.11.9-'''+mode+'''">
+  manifest.write_text('''<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="local.gt8pro.moseybridge" android:versionCode="1140" android:versionName="0.12.3-'''+mode+'''">
 <uses-sdk android:minSdkVersion="36" android:targetSdkVersion="36"/>
 <queries><package android:name="com.google.android.mosey"/></queries>
 <application android:label="GT8 Pro Bridge · '''+mode+'''" android:allowBackup="false" android:debuggable="false" android:theme="@android:style/Theme.Material.NoActionBar">
 <meta-data android:name="xposedmodule" android:value="true"/>
 <meta-data android:name="xposedminversion" android:value="82"/>
-<meta-data android:name="xposeddescription" android:value="GT8 Pro 限时实验：'''+mode+'''；固定固件与 APK 身份，双进程86400秒到期，收发未验收"/>
+<meta-data android:name="xposeddescription" android:value="GT8 Pro 限时实验：'''+mode+'''；固定固件与 APK 身份，桥接随进程存续，收发未验收"/>
 <meta-data android:name="xposedscope" android:resource="@array/scope"/>
 <activity android:name=".MainActivity" android:exported="true"><intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent-filter></activity>
 <activity android:name=".ShareProbeActivity" android:exported="true"/>
@@ -78,7 +86,7 @@ def main():
    z.writestr('classes.dex',(dex/'classes.dex').read_bytes())
    z.writestr('assets/xposed_init','local.gt8pro.moseybridge.BridgeEntry\n')
   aligned=stage/'aligned.apk';run([bt/'zipalign','-P','16','-f','4',unsigned,aligned])
-  target=out/('GT8Pro-MoseyBridge-0.11.9-'+mode+'.apk')
+  target=out/('GT8Pro-MoseyBridge-0.12.3-'+mode+'.apk')
   run([jdk/'java','-jar',bt/'lib/apksigner.jar','sign','--ks',ks,'--ks-key-alias','gt8-local',
        '--ks-pass','env:GT8_MODULE_SIGNING_PASS','--key-pass','env:GT8_MODULE_SIGNING_PASS',
        '--min-sdk-version','36','--v4-signing-enabled','false','--out',target,aligned],env)
@@ -89,13 +97,13 @@ def main():
   rows.append({'file':target.name,'bytes':target.stat().st_size,'sha256':sha(target),'mode':mode,
        'gmsFalseToTrue':gms,'nativeLookupAdapter':binder,'deviceTested':False})
   print('BUILT',mode,'bytes='+str(target.stat().st_size),flush=True)
- receipt={'version':'0.11.9','package':'local.gt8pro.moseybridge','versionCode':1109,'scope':['com.google.android.gms','com.google.android.mosey'],
-   'gmsLifetimeMs':86400000,'moseyLifetimeMs':86400000,'boundedSoakBuild':True,'reusableConcurrentDiscoverSlots':8,'reusableConcurrentSendSlots':4,'preparationBudgetMs':15000,'nativeAdapterReadyBeforeObservers':True,'nativeAdapterRequiresVerifiedApkHash':True,'mainThreadWaitAdded':False,'newLocalSigningIdentity':False,'reuseLocal060Signature':True,'appReadonlyNativeProbe':True,'discoverTaskObservation':True,'discoverThreadWaitClassification':True,'httpStatusObservation':True,'discoveryHttpProxyToDirect':True,'controlledSendAskUploadHttpProxyToDirect':True,'sendTaskObservation':True,'routeCompatibilityScope':'ORIGINAL_ROUTE_CONSTRUCTOR_SAME_DISCOVER_SLOT_HTTPS_LITERAL_LINK_LOCAL_EXACT_PATH','globalProxyOrVpnChanged':False,'originalTlsSocketObservation':True,'fixedTargetMetadataObservation':True,'originalRouteAndRawSocketObservation':True,'boundedTlsMessageClassification':True,'arbitraryThrowableMessageExport':False,'observeOriginalTlsFlag':False,'tlsConfigurationChanged':False,'requestOrResponseContentRead':True,'rawRequestOrResponseBodyRead':False,'requestBodyExport':False,'syntheticAskFixedMetadataEqualityOnly':True,'syntheticAskMetadataKeys':['Files','FileName','FileSize','FileType','SenderComputerName'],'maxObservedDiscoverTasks':8,'interfaceVersionTransaction':False,'explicitWaitLookupSelfTest':True,'originalApkResigned':False,
+ receipt={'version':'0.12.3','package':'local.gt8pro.moseybridge','versionCode':1140,'scope':['com.google.android.gms','com.google.android.mosey'],
+   'sessionLifetime':'PROCESS','operationTimeoutsPreserved':True,'boundedSoakBuild':True,'reusableConcurrentDiscoverSlots':8,'reusableConcurrentSendSlots':4,'preparationBudgetMs':15000,'nativeAdapterReadyBeforeObservers':True,'nativeAdapterRequiresVerifiedApkHash':True,'mainThreadWaitAdded':False,'newLocalSigningIdentity':created_identity,'reuseLocal060Signature':not created_identity,'appReadonlyNativeProbe':True,'discoverTaskObservation':True,'discoverThreadWaitClassification':True,'httpStatusObservation':True,'discoveryHttpProxyToDirect':True,'controlledSendAskUploadHttpProxyToDirect':True,'sendTaskObservation':True,'routeCompatibilityScope':'ORIGINAL_ROUTE_CONSTRUCTOR_SAME_DISCOVER_SLOT_HTTPS_LITERAL_LINK_LOCAL_EXACT_PATH','globalProxyOrVpnChanged':False,'originalTlsSocketObservation':True,'fixedTargetMetadataObservation':True,'originalRouteAndRawSocketObservation':True,'boundedTlsMessageClassification':True,'arbitraryThrowableMessageExport':False,'observeOriginalTlsFlag':False,'tlsConfigurationChanged':False,'requestOrResponseContentRead':True,'rawRequestOrResponseBodyRead':False,'requestBodyExport':False,'syntheticAskFixedMetadataEqualityOnly':True,'syntheticAskMetadataKeys':['Files','FileName','FileSize','FileType','SenderComputerName'],'maxObservedDiscoverTasks':8,'interfaceVersionTransaction':False,'explicitWaitLookupSelfTest':True,'originalApkResigned':False,
    'moseyVersionCode':60715,'registrationTaskObservation':False,'resourceOnlySplitAdmission':'PINNED_SHA256_NO_DEX','baseModulesReplaced':False,'nativeBinaryAdded':False,'permissionsRequested':[],
    'explicitRadioTriggers':False,'explicitFileTransfer':True,'syntheticSystemShareEntry':True,'syntheticProviderPrivate':True,'syntheticFixtureReadGrantToMosey':True,'syntheticFixtureGrantExplicitRevoke':True,'syntheticFixtureRootControlOnly':True,'syntheticFixtureGrantEffectiveUidCheck':'PACKAGE_MANAGER_USER_0','syntheticFixtureQueryPackage':'com.google.android.mosey','syntheticFixtureReadContextObservation':True,'syntheticShareFixtureStorage':'APP_OWNED_MEDIASTORE_DOWNLOADS','syntheticMediaFixtureBytes':8192,'syntheticFixtureRevokeAllReadGrants':True,'receiveRequestObservation':True,'receiveTransportObservation':True,'gmsMayNaturallyInitializeWireless':True,'networkPermissionGap':'NETWORK_FACTORY_GRANTED_FUTURE_DEFINITIONS_ABSENT',
-   'gmsBaseSha256':'0a0af2a2c44c459a0dded52cb7e176704d640ae738980d12360697cf96c8da4e',
+   'gmsBaseSha256':'8395c70a5e4ffbe2712aea7e1045d700b282f0a67d19b80686c595c991f12112',
    'moseyBaseSha256':'7ab2deaea6c9c2bdd5ba0f935d6143c115f5ceb11cb8b63066496ad27a28da49',
    'toolchain':{'platformArchiveSha1':expected['platform-36_r02.zip'],'buildToolsArchiveSha1':expected['build-tools_r36_macosx.zip'],'xposedApiSha256':sha(api)},'files':rows,'sources':{str(f.relative_to(ROOT)):sha(f) for f in sorted((ROOT/'src').rglob('*.java'))}}
- (out/'GT8Pro-MoseyBridge-0.11.9-Provenance.json').write_text(json.dumps(receipt,ensure_ascii=False,indent=2)+'\n')
+ (out/'GT8Pro-MoseyBridge-0.12.3-Provenance.json').write_text(json.dumps(receipt,ensure_ascii=False,indent=2)+'\n')
  print('BUILD_COMPLETE; no phone operations performed')
 if __name__=='__main__':main()

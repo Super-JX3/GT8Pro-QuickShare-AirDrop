@@ -5,7 +5,15 @@ export PATH
 umask 077
 set -f
 [ "$(id -u)" = 0 ] && [ "$(cat /proc/self/attr/current)" = u:r:ksu:s0 ] && [ "$(getenforce)" = Enforcing ] || exit 1
-root=/data/adb/gt8pro-mosey-daily/runtime-integrated-v9
+# Native watchdog intentionally strips the environment. Derive the runtime
+# directory from the installed manifest rather than relying on inherited env.
+manifest=/data/adb/modules/gt8pro.mosey.integrated/payload.sha256
+[ ! -L "$manifest" ] && [ -f "$manifest" ] || exit 1
+sum=$(sha256sum "$manifest") || exit 1
+sum=${sum%% *}
+case "$sum" in *[!a-f0-9]*|'') exit 1;;esac
+[ "${#sum}" = 64 ] || exit 1
+root=/data/adb/gt8pro-mosey-daily/runtime-integrated-$sum
 [ ! -L "$root" ] || exit 1
 [ "$(stat -c '%u:%a' "$root")" = 0:700 ] && [ "$(readlink -f "$root")" = "$root" ] || exit 1
 jar=$root/profile-helper.jar

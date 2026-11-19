@@ -7,9 +7,13 @@ umask 077
 set -f
 case "${1:-probe}" in smoke-once) mode=smoke;once=1;; test-once) mode=probe;once=1;; renew-test) mode=renew-test;once=0;; probe) mode=probe;once=0;; *) exit 1;;esac
 [ "$(id -u)" = 0 ] && [ "$(cat /proc/self/attr/current)" = u:r:ksu:s0 ] || exit 1
-d=/data/adb/gt8pro-mosey-daily/runtime-integrated-v9
+d=${GT8_RUNTIME_DIR:-}
+case "$d" in /data/adb/gt8pro-mosey-daily/runtime-integrated-*) ;; *) exit 1;;esac
+name=${d##*/runtime-integrated-}
+case "$name" in *[!a-f0-9]*|'') exit 1;;esac
+[ "${#name}" = 64 ] && [ "$(readlink -f "$d")" = "$d" ] || exit 1
 [ ! -L "$d" ] && [ "$(stat -c '%u:%a' "$d")" = 0:700 ] || exit 1
-for pair in 'recover-v9.sh:ca63c55950b1a629a5da0dc76b19da719f48f428fbeb6e31c0fd3e4a53fd9ecf' 'watch-lock.sh:eb10d66c10839e5a5cd5dfbe5a1a952ec4f081484223308f26617b1d51ee2199' 'owner-guard.sh:180a2960f5cc0862ccb6329f92c067612248812f01d23c57641e149dac93bf40' 'watch-policy.sh:b1c9ee10fb33cd5550ec3978f64ecb1873437978da03475f9e3bbdbf89eaf8df' 'ui-common.sh:84c07d259b74fcda4ea9946617193deb7b3382712a220413ebfc58c3fde0eeb8' 'bind-common.sh:e6a75e680b406e4a18f07ef1e9627e2cc02aeb20046ff44a6b996486d8d3ab7f' 'main.sh:7a2083e9ab82efd8b72461628b73db4941d0d16d85b3cd3b76d30b1bcc249a39' 'transfer-idle.sh:e156907644bfdaecfd9dbc3e5d5df281d5fe3aeea2a65efd39825c55d3e87db2' 'check-helper.sh:4a0a85d5e35afcea50db79b912f9469b29f977727ac2245fb68e351ae82bde9b';do
+for pair in 'recover-v9.sh:ca63c55950b1a629a5da0dc76b19da719f48f428fbeb6e31c0fd3e4a53fd9ecf' 'watch-lock.sh:eb10d66c10839e5a5cd5dfbe5a1a952ec4f081484223308f26617b1d51ee2199' 'owner-guard.sh:180a2960f5cc0862ccb6329f92c067612248812f01d23c57641e149dac93bf40' 'watch-policy.sh:b1c9ee10fb33cd5550ec3978f64ecb1873437978da03475f9e3bbdbf89eaf8df' 'ui-common.sh:aa5445b5d5370407cbbc2217c75bc19d320fbc515f4a376fc1658fa8589eee46' 'bind-common.sh:e6a75e680b406e4a18f07ef1e9627e2cc02aeb20046ff44a6b996486d8d3ab7f' 'main.sh:1cfbbcd6e0a1959fd91b4a365ffd5770037ccd8de70d04c0612b7cbba2bdec5e' 'transfer-idle.sh:e156907644bfdaecfd9dbc3e5d5df281d5fe3aeea2a65efd39825c55d3e87db2' 'check-helper.sh:409f3c039abfc5c022192f6ac3fca8612a44389af291caccca6f71809d8b6e7c';do
  f=${pair%%:*};expected=${pair#*:}
  [ ! -L "$d/$f" ] && [ "$(stat -c '%u:%a' "$d/$f")" = 0:600 ] && [ "$(sha256sum "$d/$f" | cut -d ' ' -f1)" = "$expected" ] || exit 1
 done
@@ -26,8 +30,10 @@ closed_safe(){
  /^WINDOW MANAGER DISPLAY CONTENTS [(]dumpsys window displays[)]$/{headers++;inside=1;next}
  /^WINDOW MANAGER DISPLAY CONTENTS [(]EXT[)]$/{inside=0;next}
  /^__RC=0$/{rc++;next}
- inside&&/mCurrentFocus=/{focus++;if(!/ u0 [^ ]+\/[^ ]+/)bad=1;if(/com[.]android[.]intentresolver\/|com[.]android[.]documentsui\/|com[.]google[.]android[.]documentsui\/|com[.]coloros[.]filemanager\/com[.]oplus[.]filemanager[.]picker[.]PickerActivity([ }]|$)/)picker++}
- END{exit !(headers==1&&rc==1&&focus==1&&!picker&&!bad)}'
+ inside&&/^[ ]*Display: mDisplayId=/{displays++;primary=($0~/^[ ]*Display: mDisplayId=0[ ]/);if(primary)primaryCount++;else others[displays]=1;next}
+ inside&&/mCurrentFocus=/{if(!displays){bad=1;next}if(primary){focus++;if(!/ u0 [^ ]+\/[^ ]+/)bad=1;if(/com[.]android[.]intentresolver\/|com[.]android[.]documentsui\/|com[.]google[.]android[.]documentsui\/|com[.]coloros[.]filemanager\/com[.]oplus[.]filemanager[.]picker[.]PickerActivity([ }]|$)/)picker++}else{otherFocus[displays]++;if($0!~/^[ ]*mCurrentFocus=null[ ]*$/)bad=1}next}
+ inside&&/mFocusedApp=/&&!primary{if(!displays){bad=1;next}otherApp[displays]++;if($0!~/^[ ]*mFocusedApp=null[ ]*$/)bad=1;next}
+ END{for(i in others)if(otherFocus[i]!=1||otherApp[i]!=1)bad=1;exit !(headers==1&&rc==1&&primaryCount==1&&focus==1&&!picker&&!bad)}'
 }
 root=/data/adb/gt8pro-mosey-service
 [ ! -L "$root" ] && [ "$(stat -c '%u:%a' "$root")" = 0:700 ] || exit 1
@@ -49,6 +55,39 @@ gt8_watch_quiescent(){
   [ "$reply" = "Service $svc: not found" ] || return 1
  done
  [ "$(sh "$d/transfer-idle.sh")" = TRANSFER_CLASS=IDLE ]
+}
+# Reset only a confirmed idle, unbound main-user process started outside a session.
+# Fail closed on an ambiguous process, transfer, provider, or service observation.
+gt8_prepare_idle_boot_process(){
+ apps=$(gt8_mosey_main_pids) || return 1
+ [ -n "$apps" ] || return 0
+ case "$apps" in *[!0-9]*|'') return 1;;esac
+ p=$apps
+ profile=$(sh "$d/current-code-profile.sh") || return 1
+ printf '%s\n' "$profile" | grep -qx CURRENT_PROFILE_RESULT=PASS || return 1
+ uid=$(gt8_user0_mosey_uid) || return 1
+ token=$(awk 'NR==1{sub(/^.*[)] /,"");if($20~/^[0-9]+$/)print $20}' "/proc/$p/stat" 2>/dev/null)
+ case "$token" in ''|*[!0-9]*) return 1;;esac
+ for attempt in 1 2 3;do
+  [ "$(ui_state)" = TARGET_TOP ] && [ ! -e "$root/action-lock" ] && [ -z "$(pidof mosey_server)" ] || return 1
+  [ "$(gt8_mosey_main_pids)" = "$p" ] && [ "$(gt8_user0_mosey_uid)" = "$uid" ] || return 1
+  [ "$(awk 'NR==1{sub(/^.*[)] /,"");print $20}' "/proc/$p/stat" 2>/dev/null)" = "$token" ] || return 1
+  tr -d '\000' <"/proc/$p/attr/current" | awk 'NR==1&&/^u:r:mosey_app:s0(:c[0-9]+(,c[0-9]+)*)?$/{ok=1}END{exit !(NR==1&&ok)}' || return 1
+  [ "$(sh "$d/transfer-idle.sh")" = TRANSFER_CLASS=IDLE ] || return 1
+  query=$(timeout -k 1 4 cmd package query-services --components --user 0 -a com.google.android.nearby.SHARING_PROVIDER -p com.google.android.mosey) || return 1
+  [ "$query" = 'No services found' ] || return 1
+  for svc in com.google.android.moseyservice.IMoseyService/default com.google.pixel.moseyservice.IMoseyService/default;do
+   reply=$(timeout -k 1 3 service check "$svc") || return 1
+   [ "$reply" = "Service $svc: not found" ] || return 1
+  done
+  snapshot=$(timeout -k 1 5 dumpsys activity services com.google.android.mosey/.ExternalSharingService) || return 1
+  printf '%s\n' "$snapshot" | gt8_main_services_view | awk '/^ACTIVITY MANAGER SERVICES/{h++} /ServiceRecord\{/{bad=1} /Error:|Permission Denial|Exception dumping/{bad=1} END{exit !(h==1&&!bad)}' || return 1
+  [ "$attempt" = 3 ] || sleep 1
+ done
+ [ "$(gt8_mosey_main_pids)" = "$p" ] && [ "$(awk 'NR==1{sub(/^.*[)] /,"");print $20}' "/proc/$p/stat" 2>/dev/null)" = "$token" ] || return 1
+ timeout -k 1 4 am force-stop --user 0 com.google.android.mosey || return 1
+ [ -z "$(gt8_mosey_main_pids)" ] || return 1
+ echo WATCH_IDLE_BOOT_PROCESS=STOPPED
 }
 GT8_WATCHER_PID=$$
 GT8_WATCHER_TOKEN=$(awk 'NR==1{sub(/^.*[)] /,"");print $20}' "/proc/$$/stat")
@@ -72,6 +111,7 @@ while :;do
  case "$action" in
   LAUNCH)
    [ "$(ui_state)" = TARGET_TOP ] && [ "$(sh "$d/transfer-idle.sh")" = TRANSFER_CLASS=IDLE ] || { echo WATCH_ADMISSION=UNCONFIRMED;exit 1; }
+   gt8_prepare_idle_boot_process || { echo WATCH_IDLE_BOOT_PROCESS=UNCONFIRMED;exit 1; }
    cmd deviceidle tempwhitelist -u 0 -d 120000 com.google.android.mosey >/dev/null || exit 1
    echo WATCH_SESSION=BEGIN
    sh "$d/main.sh" "$mode"

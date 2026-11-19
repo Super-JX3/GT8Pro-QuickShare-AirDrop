@@ -7,15 +7,32 @@ umask 077
 set -f
 module=/data/adb/modules/gt8pro.mosey.integrated
 root=/data/adb/gt8pro-mosey-daily
-d=$root/runtime-integrated-v9
+manifest_digest=85d945aa836f303772bc23377edc925ddefdcaf00247323335725189530469b9
+d=$root/runtime-integrated-$manifest_digest
+GT8_RUNTIME_DIR=$d
+export GT8_RUNTIME_DIR
 [ "$(id -u)" = 0 ] && [ "$(cat /proc/self/attr/current)" = u:r:ksu:s0 ] && [ "$(getenforce)" = Enforcing ] || exit 1
 [ "$(getprop ro.product.model)" = RMX5200 ] && [ "$(getprop ro.build.display.id)" = 'RMX5200_16.0.10.501(CN01)' ] || exit 1
 [ ! -L "$module" ] && [ -d "$module" ] && [ ! -L "$module/payload" ] && [ -d "$module/payload" ] || exit 1
 for flag in disable remove update;do [ ! -e "$module/$flag" ] && [ ! -L "$module/$flag" ] || exit 0;done
-[ ! -L "$module/payload.sha256" ] && [ "$(sha256sum "$module/payload.sha256" | cut -d ' ' -f1)" = d655b4614cf20d2621505b776c7d3e08e7053289373e978b55d1bd252c8066c2 ] || exit 1
+[ ! -L "$module/payload.sha256" ] && [ "$(sha256sum "$module/payload.sha256" | cut -d ' ' -f1)" = 85d945aa836f303772bc23377edc925ddefdcaf00247323335725189530469b9 ] || exit 1
 [ ! -L "$root" ] || exit 1
 mkdir -m 0700 -p "$root" || exit 1
 [ "$(stat -c '%u:%a' "$root")" = 0:700 ] && [ "$(readlink -f "$root")" = "$root" ] || exit 1
+# The watcher and its owner records require a private service directory even
+# on a brand new installation. Never follow an existing symlink or repair an
+# untrusted directory's ownership or permissions.
+prepare_service_root(){
+ service_root=$1
+ [ ! -L "$service_root" ] || return 1
+ if [ ! -e "$service_root" ];then
+  mkdir -m 0700 "$service_root" 2>/dev/null || return 1
+ fi
+ [ ! -L "$service_root" ] && [ -d "$service_root" ] && \
+ [ "$(stat -c '%u:%a' "$service_root" 2>/dev/null)" = 0:700 ] && \
+ [ "$(readlink -f "$service_root" 2>/dev/null)" = "$service_root" ]
+}
+prepare_service_root /data/adb/gt8pro-mosey-service || exit 1
 lock=$root/bootstrap.lock
 [ ! -L "$lock" ] || exit 1
 if [ ! -e "$lock" ];then (set -C; : >"$lock") || exit 1;fi
@@ -105,8 +122,10 @@ closed_safe(){
  /^WINDOW MANAGER DISPLAY CONTENTS [(]dumpsys window displays[)]$/{headers++;inside=1;next}
  /^WINDOW MANAGER DISPLAY CONTENTS [(]EXT[)]$/{inside=0;next}
  /^__RC=0$/{rc++;next}
- inside&&/mCurrentFocus=/{focus++;if(!/ u0 [^ ]+\/[^ ]+/)bad=1;if(/com[.]android[.]intentresolver\/|com[.]android[.]documentsui\/|com[.]google[.]android[.]documentsui\/|com[.]coloros[.]filemanager\/com[.]oplus[.]filemanager[.]picker[.]PickerActivity([ }]|$)/)picker++}
- END{exit !(headers==1&&rc==1&&focus==1&&!picker&&!bad)}'
+ inside&&/^[ ]*Display: mDisplayId=/{displays++;primary=($0~/^[ ]*Display: mDisplayId=0[ ]/);if(primary)primaryCount++;else others[displays]=1;next}
+ inside&&/mCurrentFocus=/{if(!displays){bad=1;next}if(primary){focus++;if(!/ u0 [^ ]+\/[^ ]+/)bad=1;if(/com[.]android[.]intentresolver\/|com[.]android[.]documentsui\/|com[.]google[.]android[.]documentsui\/|com[.]coloros[.]filemanager\/com[.]oplus[.]filemanager[.]picker[.]PickerActivity([ }]|$)/)picker++}else{otherFocus[displays]++;if($0!~/^[ ]*mCurrentFocus=null[ ]*$/)bad=1}next}
+ inside&&/mFocusedApp=/&&!primary{if(!displays){bad=1;next}otherApp[displays]++;if($0!~/^[ ]*mFocusedApp=null[ ]*$/)bad=1;next}
+ END{for(i in others)if(otherFocus[i]!=1||otherApp[i]!=1)bad=1;exit !(headers==1&&rc==1&&primaryCount==1&&focus==1&&!picker&&!bad)}'
 }
 wait_for_rearm(){
  . "$d/ui-common.sh"

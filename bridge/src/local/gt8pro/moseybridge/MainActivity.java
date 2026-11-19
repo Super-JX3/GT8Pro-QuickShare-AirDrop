@@ -1,6 +1,7 @@
 package local.gt8pro.moseybridge;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.os.Bundle;
@@ -72,7 +73,11 @@ public final class MainActivity extends Activity {
   restart.setAllCaps(false);
   restart.setTextColor(dark?Color.parseColor("#102B58"):Color.WHITE);
   restart.setBackgroundTintList(ColorStateList.valueOf(accent));
-  restart.setOnClickListener(v -> restartService());
+  restart.setOnClickListener(v -> new AlertDialog.Builder(this)
+    .setTitle("重启并恢复 AirDrop")
+    .setMessage("如果其他设备正在使用 Wi-Fi 直连，将断开当前直连（包括平板互联），以便尝试恢复 AirDrop。正在进行的分享不会被主动中断。")
+    .setNegativeButton("取消", null)
+    .setPositiveButton("断开直连并重启", (dialog,which) -> restartService()).show());
   LinearLayout.LayoutParams action=new LinearLayout.LayoutParams(-1,dp(56));
   action.topMargin=dp(28);
   layout.addView(restart,action);
@@ -88,9 +93,9 @@ public final class MainActivity extends Activity {
    String result="ERROR";
    Process p=null;
    try {
-    p=new ProcessBuilder("su","-c","sh /data/adb/modules/gt8pro.mosey.integrated/payload/restart-service.sh")
+    p=new ProcessBuilder("su","-c","sh /data/adb/modules/gt8pro.mosey.integrated/payload/restart-service.sh reclaim")
       .redirectErrorStream(true).start();
-    if(p.waitFor(35,TimeUnit.SECONDS)) {
+    if(p.waitFor(60,TimeUnit.SECONDS)) {
      InputStream in=p.getInputStream();
      ByteArrayOutputStream out=new ByteArrayOutputStream();
      byte[] bytes=new byte[256]; int n; int count=0;
@@ -100,6 +105,7 @@ public final class MainActivity extends Activity {
      else if(response.contains("TRANSFER_BUSY"))result="BUSY";
      else if(response.contains("MODULE_UNAVAILABLE"))result="MODULE";
      else if(response.contains("SERVICE_ACTIVE"))result="ACTIVE";
+     else if(response.contains("P2P_RELEASE_FAILED"))result="P2P_FAILED";
     } else {p.destroy();result="TIMEOUT";}
    } catch(Exception ignored) {if(p!=null)p.destroy();}
    final String outcome=result;
@@ -113,6 +119,7 @@ public final class MainActivity extends Activity {
       break;
      case "BUSY":status.setText("检测到传输进行中或状态不明确，请稍后再试。");break;
      case "ACTIVE":status.setText("服务正在运行。请关闭 Quick Share 页面，等待服务停止后再试。");break;
+     case "P2P_FAILED":status.setText("无法释放 Wi-Fi 直连，平板可能仍处于连接状态。请断开后重试。");break;
      case "MODULE":status.setText("未找到兼容的整合模块，请检查模块是否启用。");break;
      case "TIMEOUT":status.setText("操作超时，请检查 Root 授权及服务状态。");break;
      default:status.setText("恢复未完成，请检查 Root 授权及模块状态。");
