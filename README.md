@@ -12,7 +12,7 @@
 
 桥 APK 中点“重启分享服务”，确认“断开直连并重启”。这会断开当前 Wi‑Fi 直连，包括平板互联；不会主动删除已保存的配对。操作前检查分享传输状态，无法确认空闲时不会继续。此方案是手动恢复，并未实现平板互联和 AirDrop 同时使用；其他 Wi‑Fi 直连场景、长期稳定性和其他机型仍待验证。
 
-源码与候选桥 APK 已更新；新版本完整模块暂未发布到 GitHub Release，可按[构建说明](docs/BUILD.md)使用有合法使用权的匹配输入自行组装。原厂组件和本地签名材料不包含在源码仓库中。
+下载 [0.15.2-rc 实验版](https://github.com/Super-JX3/GT8Pro-QuickShare-AirDrop/releases/tag/v0.15.2-rc) 中的整合模块 ZIP 和 0.12.3 桥 APK。也可按[构建说明](docs/BUILD.md)使用有合法使用权的匹配输入自行组装。原厂组件和本地签名材料不包含在源码仓库中。
 
 ## 已验证的设备
 
@@ -39,7 +39,7 @@ Live Photo 的动态部分和 Android 相册显示兼容性尚未完成验证。
 
 `releases/GT8Pro-MoseyBridge-0.11.6.apk` 是经过个人信息清理后重建的桥 APK。0.13.7 / 0.11.6 在测试机上通过了重启启动和一次 iPhone→Android 接收：进度短暂停在 25% 后显示“已接收”，日志记录了真实完成回调的补送。该文件未做两端独立哈希比较；反向传输、并发和长期稳定性未在此版本重新验收。不要将主机测试当作手机验收。
 
-从 [0.14.1-rc Release](https://github.com/Super-JX3/GT8Pro-QuickShare-AirDrop/releases/tag/v0.14.1-rc) 下载整合模块 ZIP 和 0.11.9 桥 APK。整合 ZIP 包含 Google 和厂商组件；项目代码的开源许可不覆盖这些外部组件。
+旧版 [0.14.1-rc Release](https://github.com/Super-JX3/GT8Pro-QuickShare-AirDrop/releases/tag/v0.14.1-rc) 提供当时的整合模块 ZIP 和 0.11.9 桥 APK。整合 ZIP 包含 Google 和厂商组件；项目代码的开源许可不覆盖这些外部组件。
 
 也可使用 `python3 build.py --input /path/to/local-verified-inputs` 在本地组装固定版本。当前未发布的源码还提供实验性自编译入口，可生成项目组件并更新校验链；原厂文件仍需自行合法取得，自编译产物尚未经过实机验证，详见 [构建说明](docs/BUILD.md)。请勿提交签名密钥或个人测试日志。
 
