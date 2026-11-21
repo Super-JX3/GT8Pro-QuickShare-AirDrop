@@ -30,7 +30,7 @@ check(empty.replace('mFocusedApp=null','mFocusedApp=ActivityRecord{a u0 some.oth
 check(empty.replace('  mFocusedApp=null\n','')+primary,'UNCONFIRMED',False)
 check(empty+primary+primary,'UNCONFIRMED',False)
 print('UI_DISPLAY_FOCUS_POLICY=PASS')
-for name in ('module-template/payload/watch-daily.sh','module-template/service.sh'):
+for name in ('module-template/payload/watch-daily.sh','module-template/service.sh','module-template/payload/ui-lease-monitor.sh'):
  text=(Path(__file__).resolve().parent.parent/name).read_text();start=text.index('closed_safe(){');begin=text.index("| awk '",start)+len("| awk '");end=text.index("}'\n}",begin)+1;awk=text[begin:end]
  def closed(displays,expected):
   r=subprocess.run(['awk',awk],input=header+displays+'WINDOW MANAGER DISPLAY CONTENTS (EXT)\n__RC=0\n',text=True,capture_output=True)

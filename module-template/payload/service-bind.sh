@@ -102,6 +102,18 @@ sv_cleanup() {
 }
 trap sv_cleanup 0
 trap 'exit 1' 1 2 15
+prepare_binding_stream() {
+    # Start collecting evidence before GMS can bind the official provider.
+    sh "$GT8_BINDDIR/ui-start.sh" "$OUT" >"$OUT/binding-ui-warmup-report.txt" 2>&1 || return 1
+    setsid sh "$GT8_BINDDIR/app-stream.sh" "$OUT" </dev/null >"$OUT/binding-stream-private.txt" 2>&1 &
+    BIND_STREAM=$!
+    i=0
+    while [ ! -f "$OUT/binding-stream-ready.txt" ] && [ "$i" -lt 20 ];do sleep 0.1;i=$((i+1));done
+    [ "$(cat "$OUT/binding-stream-ready.txt" 2>/dev/null)" = READY ] || return 1
+    sleep 0.1
+    [ ! -f "$OUT/binding-stream-status.txt" ] || return 1
+}
+
 gt8_handoff_begin "$OUT" || sv_finish SERVICE_STATE_UNVERIFIED
 "$GT8_BINDDIR/gt8_service_watchdog_soak" run "${OUT##*/}" >"$OUT/helper-output.txt" 2>&1 &
 SV_HELPER=$!
@@ -116,15 +128,9 @@ while [ "$sv_i" -lt 20 ]; do
         registration_binder observed
         case "$?" in
             0)
-                sleep 2
-                if registration_identity "$SV_PID" "$SV_TOKEN" \
-                    && registration_shim_success "$OUT/daemon.log" "$SV_PID"; then
-                    registration_binder confirmed
-                    case "$?" in
-                        0) SV_OBSERVED=true; break ;;
-                        2) SV_REASON=BINDER_QUERY_UNVERIFIED; break ;;
-                    esac
-                fi ;;
+                prepare_binding_stream || sv_finish SERVICE_STATE_UNVERIFIED
+                SV_OBSERVED=true
+                break ;;
             2) SV_REASON=BINDER_QUERY_UNVERIFIED; break ;;
         esac
     fi
@@ -134,22 +140,14 @@ done
 if [ "$SV_OBSERVED" = true ]; then
     . "$GT8_BINDDIR/bind-common.sh"
     echo NETWORK_FACTORY_GRANTED=PASS
-    # Warm the real receiving broker UI before the app makes its first SDK bind.
-    sh "$GT8_BINDDIR/ui-start.sh" "$OUT" >"$OUT/binding-ui-warmup-report.txt" 2>&1 || sv_finish SERVICE_STATE_UNVERIFIED
-    setsid sh "$GT8_BINDDIR/app-stream.sh" "$OUT" </dev/null >"$OUT/binding-stream-private.txt" 2>&1 &
-    BIND_STREAM=$!
-    i=0
-    while [ ! -f "$OUT/binding-stream-ready.txt" ] && [ "$i" -lt 20 ];do sleep 0.1;i=$((i+1));done
-    [ "$(cat "$OUT/binding-stream-ready.txt" 2>/dev/null)" = READY ] || sv_finish SERVICE_STATE_UNVERIFIED
-    sleep 0.1
-    [ ! -f "$OUT/binding-stream-status.txt" ] || sv_finish SERVICE_STATE_UNVERIFIED
     setsid sh "$GT8_BINDDIR/provider-guard.sh" "$OUT" </dev/null >"$OUT/provider-guard-private.txt" 2>&1 &
     PROVIDER_GUARD=$!
     i=0
     while [ ! -f "$OUT/provider-guard-ready.txt" ] && [ "$i" -lt 20 ];do sleep 0.1;i=$((i+1));done
     [ "$(cat "$OUT/provider-guard-ready.txt" 2>/dev/null)" = READY ] || sv_finish SERVICE_STATE_UNVERIFIED
     PROVIDER_OPEN=true
-    sh "$GT8_BINDDIR/provider-control.sh" "$OUT" enable >"$OUT/provider-enable.txt" 2>&1 || sv_finish SERVICE_STATE_UNVERIFIED
+    sh "$GT8_BINDDIR/provider-control.sh" "$OUT" enable "$SV_PID" "$SV_TOKEN" \
+        >"$OUT/provider-enable.txt" 2>&1 || sv_finish SERVICE_STATE_UNVERIFIED
     sh "$GT8_BINDDIR/app-probe.sh" "$OUT" >"$OUT/binding-report.txt" 2>&1
     sv_app_rc=$?
     . "$GT8_BINDDIR/bind-common.sh"

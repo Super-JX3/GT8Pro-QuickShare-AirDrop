@@ -11,6 +11,14 @@ public final class HookLogic {
                 && ("com.google.android.gms".equals(pkg) || "com.google.android.mosey".equals(pkg))
                 && pkg.equals(process);
     }
+    public static boolean uiTarget(String pkg, String process, int uid, int sdk, String firmware) {
+        return "com.google.android.gms".equals(pkg)
+                && "com.google.android.gms.ui".equals(process)
+                && target(pkg, pkg, uid, sdk, firmware);
+    }
+    public static boolean offerInteropCapability(boolean verified, Object[] args) {
+        return verified && args != null && args.length == 1 && Boolean.FALSE.equals(args[0]);
+    }
     public static boolean enable(boolean adapter, boolean active, long now, long deadline,
             boolean threw, Object value, int arguments) {
         return adapter && active && now < deadline && !threw && arguments == 0

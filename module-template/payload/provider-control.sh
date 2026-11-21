@@ -5,6 +5,17 @@ PATH=/system/bin:/system/xbin
 export PATH
 set -f
 set -o pipefail
+provider_native_ready() {
+  [ ! -e "$OUT/watchdog.status" ] && gt8_service_record \
+    && [ "$SV_PID:$SV_TOKEN" = "$1:$2" ] \
+    && registration_identity "$SV_PID" "$SV_TOKEN" \
+    && registration_shim_success "$OUT/daemon.log" "$SV_PID" || return 1
+  (timeout -k 1 3 service check com.google.android.moseyservice.IMoseyService/default;printf '\n__PROVIDER_BINDER_RC=%s\n' "$?") 2>&1 | awk '
+  /^Service com[.]google[.]android[.]moseyservice[.]IMoseyService\/default: found$/{n++;next}
+  /^__PROVIDER_BINDER_RC=0$/{m++;next} NF{bad=1} END{exit !(n==1&&m==1&&!bad)}' || return 1
+  [ ! -e "$OUT/watchdog.status" ] && registration_identity "$SV_PID" "$SV_TOKEN"
+}
+
 provider_control_main() {
 OUT=$1
 mode=$2
@@ -21,16 +32,23 @@ sum=$(sha256sum "$backup") || exit 1
 [ "${sum%% *}" = 25459f6be305987883435474d59ac40251005d187aacb7ebcb9c5cb9c8347412 ] || exit 1
 case "$mode" in
  enable)
+  [ "$#" = 4 ] || exit 1
+  expected_pid=$3
+  expected_token=$4
+  PROC_ROOT=/proc
+  BIN=/odm/bin/mosey_server
+  service_root=/data/adb/modules/gt8pro.mosey.integrated/base-service
+  . "$service_root/service-common.sh"
+  . "$service_root/registration-checks.sh"
   . "$GT8_BINDDIR/updated-package-checks.sh"
   report=$(sh "$GT8_BINDDIR/current-code-profile.sh") || exit 1
   expected_uid=$(gt8_user0_mosey_uid) || exit 1
   uid_record=$OUT/binding-app-uid.txt
   [ ! -L "$uid_record" ] && [ "$(stat -c '%u:%a' "$uid_record" 2>/dev/null)" = 0:600 ] && [ "$(cat "$uid_record")" = "$expected_uid" ] || exit 1
   printf '%s\n' "$report" | updated_code_profile_ok /dev/stdin "$expected_uid" || exit 1
-  [ -n "$(pidof mosey_server 2>/dev/null)" ] || exit 1
-  (timeout -k 1 3 service check com.google.android.moseyservice.IMoseyService/default;printf '\n__PROVIDER_BINDER_RC=%s\n' "$?") 2>&1 | awk '
-  /^Service com[.]google[.]android[.]moseyservice[.]IMoseyService\/default: found$/{n++;next}
-  /^__PROVIDER_BINDER_RC=0$/{m++;next} NF{bad=1} END{exit !(n==1&&m==1&&!bad)}' || exit 1
+  # Revalidate the exact registered child after the slower package profile.
+  ( . "$GT8_BINDDIR/ui-common.sh"; [ "$(ui_state)" = TARGET_TOP ] ) || exit 1
+  provider_native_ready "$expected_pid" "$expected_token" || exit 1
   epoch=$(date +%s)
   case "$epoch" in ''|*[!0-9]*) exit 1;;esac
   (set -C; printf '%s\n' "$epoch" >"$OUT/provider-enable-epoch.txt") || exit 1

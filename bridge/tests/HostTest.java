@@ -64,6 +64,15 @@ public final class HostTest {
   for(int uid:new int[]{0,9999,100000,99912345})check(!HookLogic.target("com.google.android.gms","com.google.android.gms",uid,36,fw),"wrong user/UID rejected");
   check(!HookLogic.target("android","android",12345,36,fw),"system process excluded");
   check(!HookLogic.target("com.google.android.gms","com.google.android.gms.persistent",12345,36,fw),"unverified sibling process excluded");
+  check(!HookLogic.target("com.google.android.gms","com.google.android.gms.ui",12345,36,fw),"UI excluded from main bridge");
+  check(HookLogic.uiTarget("com.google.android.gms","com.google.android.gms.ui",12345,36,fw),"exact UI capability target");
+  check(!HookLogic.uiTarget("com.google.android.gms","com.google.android.gms",12345,36,fw),"main GMS excluded from UI hook");
+  check(!HookLogic.uiTarget("com.google.android.gms","com.google.android.gms.ui",112345,36,fw),"secondary user excluded from UI hook");
+  check(!HookLogic.uiTarget("com.google.android.gms","com.google.android.gms.ui",12345,36,"other"),"unverified firmware excluded from UI hook");
+  check(HookLogic.offerInteropCapability(true,new Object[]{Boolean.FALSE}),"verified UI can report capability");
+  check(!HookLogic.offerInteropCapability(false,new Object[]{Boolean.FALSE}),"unverified UI stays unchanged");
+  check(!HookLogic.offerInteropCapability(true,new Object[]{Boolean.TRUE}),"original supported value preserved");
+  check(!HookLogic.offerInteropCapability(true,new Object[]{false,false}),"unexpected UI signature rejected");
   check(!HookLogic.target("com.google.android.gms","com.google.android.gms",12345,37,fw),"changed SDK excluded");
   check(!HookLogic.target("com.google.android.gms","com.google.android.gms",12345,36,"other"),"changed firmware excluded");
   check(HookLogic.enable(true,true,1,2,false,Boolean.FALSE,0),"successful false can change");

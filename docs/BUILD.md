@@ -1,4 +1,4 @@
-> 当前源码为 0.15.2 / 0.12.3 实验候选；自编译产物尚未经过实机验证。
+> 当前源码为 0.16.0 / 0.12.5 实验候选；自编译产物尚未经过实机验证。
 
 # 构建与输入边界
 
@@ -10,7 +10,7 @@
 python3 build.py
 ```
 
-输出为 `dist/GT8Pro-QuickShare-0.15.2.zip`。也可用 `python3 build.py --input /path/to/local-files` 指定本地目录、ZIP 或单个文件；`--input` 可重复，`--output` 可更改输出路径。脚本不会下载或上传本地输入。
+输出为 `dist/GT8Pro-QuickShare-0.16.0.zip`。也可用 `python3 build.py --input /path/to/local-files` 指定本地目录、ZIP 或单个文件；`--input` 可重复，`--output` 可更改输出路径。脚本不会下载或上传本地输入。
 
 仓库的 `releases/GT8Pro-project-helpers-0.13.9.zip` 提供本项目五个固定版本辅助程序，源码分别位于 `helpers/`、`native/` 和 `module-template/base-service/source/`；它们不再要求从旧整合 ZIP 获取。`external-inputs.json` 仍对所有输入按长度与 SHA-256 匹配，并验证安装清单的完整校验链；缺项会列出后退出。
 

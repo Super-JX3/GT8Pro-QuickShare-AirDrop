@@ -7,6 +7,9 @@ import android.content.ComponentName;
 import android.content.ServiceConnection;
 import android.content.pm.ResolveInfo;
 import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
+import android.content.pm.Signature;
 import android.os.Build;
 import android.os.IBinder;
 import android.os.Process;
@@ -16,7 +19,9 @@ import de.robv.android.xposed.IXposedHookLoadPackage;
 import de.robv.android.xposed.XC_MethodHook;
 import de.robv.android.xposed.XposedBridge;
 import de.robv.android.xposed.callbacks.XC_LoadPackage;
+import java.io.File;
 import java.lang.reflect.*;
+import java.security.MessageDigest;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
@@ -25,11 +30,13 @@ import java.util.concurrent.atomic.*;
 public final class BridgeEntry implements IXposedHookLoadPackage {
     private static final AtomicBoolean STARTED=new AtomicBoolean();
     @Override public void handleLoadPackage(XC_LoadPackage.LoadPackageParam loaded) {
+        boolean ui=HookLogic.uiTarget(loaded.packageName,loaded.processName,Process.myUid(),
+                Build.VERSION.SDK_INT,Build.DISPLAY);
         if(!"RMX5200".equals(Build.MODEL)
-                || !HookLogic.target(loaded.packageName,loaded.processName,Process.myUid(),
-                    Build.VERSION.SDK_INT,Build.DISPLAY)
+                || (!ui && !HookLogic.target(loaded.packageName,loaded.processName,Process.myUid(),
+                    Build.VERSION.SDK_INT,Build.DISPLAY))
                 || !STARTED.compareAndSet(false,true))return;
-        final Session s=new Session(loaded.packageName,loaded.classLoader);
+        final Session s=new Session(loaded.packageName,loaded.classLoader,ui);
         try {
             Method attach=Application.class.getDeclaredMethod("attach",Context.class);
             s.hook(attach,new XC_MethodHook(){
@@ -47,6 +54,7 @@ public final class BridgeEntry implements IXposedHookLoadPackage {
     private static final class Session {
         final String pkg;
         final ClassLoader loader;
+        final boolean uiCapability;
         final long started=SystemClock.elapsedRealtime(), deadline;
         final Object lock=new Object();
         final List<XC_MethodHook.Unhook> handles=new ArrayList<>();
@@ -72,8 +80,8 @@ public final class BridgeEntry implements IXposedHookLoadPackage {
         });
         volatile boolean armed, nativeArmed, stopped;
         volatile int gmsUid=-1;
-        Session(String p,ClassLoader l){
-            pkg=p;loader=l;
+        Session(String p,ClassLoader l,boolean ui){
+            pkg=p;loader=l;uiCapability=ui;
             // The verified hooks live with this process. Individual operations keep
             // their existing preparation and inspection deadlines.
             deadline=Long.MAX_VALUE;
@@ -95,22 +103,24 @@ public final class BridgeEntry implements IXposedHookLoadPackage {
                 if(!attached.compareAndSet(false,true))return;
                 try{if("com.google.android.mosey".equals(pkg))gmsUid=context.getPackageManager().getApplicationInfo("com.google.android.gms",0).uid;}catch(Throwable ignored){}
                 emit("ATTACH_OBSERVED","result=PASS");
-                workers.execute(()->prepare(info));
+                workers.execute(()->prepare(context,info));
             }catch(Throwable failure){emit("SETUP_REJECTED","reason=CONTEXT_IDENTITY");stop();}
         }
-        void prepare(ApplicationInfo info){
+        void prepare(Context context,ApplicationInfo info){
             long preparationDeadline=Math.min(deadline,SystemClock.elapsedRealtime()+15000);
             try {
                 boolean gms="com.google.android.gms".equals(pkg);
                 emit("PREPARATION_STARTED","kind=OBSERVATION");
                 SourceGuard.hash(info,gms?SourceGuard.GMS_SHA:SourceGuard.MOSEY_SHA,preparationDeadline);
                 emit("APK_IDENTITY","result=PASS");
-                if(gms)installGms(info,preparationDeadline);else installMosey(info,preparationDeadline);
+                if(uiCapability)installUiCapability(context,info,preparationDeadline);
+                else if(gms)installGms(info,preparationDeadline);
+                else installMosey(info,preparationDeadline);
                 synchronized(lock){
                     if(stopped||SystemClock.elapsedRealtime()>=deadline)throw new Exception("EXPIRED");
                     armed=true;
                 }
-                emit("HOOKS_READY","scope="+(gms?"GMS_MAIN":"MOSEY_MAIN"));
+                emit("HOOKS_READY","scope="+(uiCapability?"GMS_UI":gms?"GMS_MAIN":"MOSEY_MAIN"));
                 if(!gms){workers.execute(this::probeNative);}
             }catch(Throwable failure){
                 // Never print a file path, Throwable message, package arguments or remote data.
@@ -122,6 +132,37 @@ public final class BridgeEntry implements IXposedHookLoadPackage {
             Class<?> c=Class.forName(name,false,loader);
             SourceGuard.owner(c,info,until);
             return c;
+        }
+        void installUiCapability(Context context,ApplicationInfo info,long until)throws Exception{
+            PackageInfo mosey=context.getPackageManager().getPackageInfo(
+                    "com.google.android.mosey",PackageManager.GET_SIGNING_CERTIFICATES);
+            ApplicationInfo app=mosey.applicationInfo;
+            int required=ApplicationInfo.FLAG_SYSTEM|ApplicationInfo.FLAG_UPDATED_SYSTEM_APP;
+            if(app==null||!app.enabled||(app.flags & required)!=required
+                    ||app.uid<10000||app.uid>=100000||mosey.getLongVersionCode()!=60715
+                    ||mosey.signingInfo==null)throw new Exception("UI_CAPABILITY_APP");
+            Signature[] signers=mosey.signingInfo.getApkContentsSigners();
+            if(signers==null||signers.length!=1||!HexFormat.of().formatHex(
+                    MessageDigest.getInstance("SHA-256").digest(signers[0].toByteArray()))
+                    .equals("82f90326951d14e08010b2a26cce329be2b09e74752158b7640e04a544676878"))
+                throw new Exception("UI_CAPABILITY_APP");
+            SourceGuard.hashFile(new File("/system_ext/priv-app/MoseyApp/MoseyApp.apk"),
+                    "8ddb871f9a4df13181de71a89dcbec9f05ff7a2c9c0519f88e5851e6e7765d14",until);
+            // HomeFeatures is local to Quick Share's UI. Its constructor derives the
+            // normal presentation from capability and GMS's own presentation flags.
+            Class<?> features=target("eouj",info,until);
+            if(features.getDeclaredField("h").getType()!=boolean.class)
+                throw new Exception("UI_CAPABILITY_SIGNATURE");
+            Constructor<?> constructor=features.getDeclaredConstructor(boolean.class);
+            AtomicInteger reports=new AtomicInteger();
+            hook(constructor,new XC_MethodHook(){
+                @Override protected void beforeHookedMethod(MethodHookParam call){
+                    if(!HookLogic.offerInteropCapability(active(),call.args))return;
+                    call.args[0]=Boolean.TRUE;
+                    if(reports.incrementAndGet()<=8)
+                        emit("UI_INTEROP_CAPABILITY","original=FALSE reported=TRUE");
+                }
+            });
         }
         void installGms(ApplicationInfo info,long until)throws Exception{
             Class<?> flags=target("keky",info,until);
@@ -856,7 +897,8 @@ public final class BridgeEntry implements IXposedHookLoadPackage {
             for(String code:new String[]{"DEADLINE","EXPIRED","APK_SIZE","APK_CHANGED","APK_HASH","APK_SPLITS",
                     "LOADER_TYPE","DEX_ELEMENTS","DEX_MISSING","DEX_NAME","DEX_ENTRIES","DEX_SOURCE",
                     "CLASS_BUDGET","CLASS_SOURCE_AMBIGUOUS","GETTER_SIGNATURE","REGISTRY_SIGNATURE",
-                    "STATUS_SIGNATURE","CALLBACK_SIGNATURE","TASK_SIGNATURE","SDK_BIND_SIGNATURE","DISCOVER_SIGNATURE","NO_HANDLE"})if(code.equals(message))return code;
+                    "STATUS_SIGNATURE","CALLBACK_SIGNATURE","TASK_SIGNATURE","SDK_BIND_SIGNATURE","DISCOVER_SIGNATURE",
+                    "UI_CAPABILITY_APP","UI_CAPABILITY_SIGNATURE","NO_HANDLE"})if(code.equals(message))return code;
             if(failure instanceof ClassNotFoundException)return "CLASS_UNAVAILABLE";
             if(failure instanceof ReflectiveOperationException)return "REFLECTION_UNAVAILABLE";
             return "IDENTITY_SOURCE_OR_INSTALL";
@@ -869,7 +911,7 @@ public final class BridgeEntry implements IXposedHookLoadPackage {
             if(logs.incrementAndGet()>512)return;
             try{
                 String line="GT8BRIDGE_V1 event="+event+" process="+
-                        ("com.google.android.gms".equals(pkg)?"GMS":"MOSEY")+" "+fields;
+                        (uiCapability?"GMS_UI":"com.google.android.gms".equals(pkg)?"GMS":"MOSEY")+" "+fields;
                 Log.i("GT8ProBridge",line);XposedBridge.log(line);
             }catch(Throwable ignored){/* No diagnostic failure escapes into the host process. */}
         }

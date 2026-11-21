@@ -7,6 +7,7 @@ and does not install the resulting artifacts on a device.
 import argparse
 import hashlib
 import json
+import re
 import shutil
 import subprocess
 import sys
@@ -118,8 +119,7 @@ def main():
         apks = list(apkdir.glob('GT8Pro-MoseyBridge-*-transfer-test.apk'))
         if len(apks) != 1:
             raise SystemExit('Bridge build did not produce exactly one transfer-test APK')
-        shipped = ROOT/'releases/GT8Pro-MoseyBridge-0.12.3.apk'
-        old_apk, new_apk = digest(shipped.read_bytes()), digest(apks[0].read_bytes())
+        new_apk = digest(apks[0].read_bytes())
         if any(p.is_symlink() for p in (ROOT/'module-template').rglob('*')):
             raise SystemExit('Module template must not contain symlinks')
         shutil.copytree(ROOT/'module-template', stage, symlinks=False)
@@ -157,9 +157,15 @@ def main():
             textual.append(path)
         checker = stage/'payload/check-helper.sh'
         text = checker.read_text()
-        if text.count(old_apk) != 1:
+        # Read the installed APK pin from the checked-in checker. This also
+        # supports local candidates that do not have a binary in releases/.
+        pins = re.findall(
+            r'^sum=\$\(sha256sum "\$apk"\) \|\| exit 1\n'
+            r'\[ "\$\{sum%% \*\}" = ([0-9a-f]{64}) \] \|\| exit 1$',
+            text, re.MULTILINE)
+        if len(pins) != 1 or text.count(pins[0]) != 1:
             raise SystemExit('Expected bridge pin missing or ambiguous')
-        checker.write_text(text.replace(old_apk,new_apk))
+        checker.write_text(text.replace(pins[0], new_apk))
         for _ in range(80):
             current = {p:digest(p.read_bytes()) for p in files}; groups = {}
             for path in files:

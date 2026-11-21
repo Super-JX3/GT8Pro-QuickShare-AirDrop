@@ -36,25 +36,19 @@ gt8_ns_isolated || gt8_ns_finish NAMESPACE_UNVERIFIED
 gt8_ns_isolated && gt8_private_mountinfo /proc/self/mountinfo \
     || gt8_ns_finish NAMESPACE_PRIVATE_UNVERIFIED
 echo NAMESPACE_ISOLATION=PASS
-mosey_check_payload || gt8_ns_finish PAYLOAD_CHECK_FAILED
-gt8_service_exact_source mosey_load_probe || gt8_ns_finish SOURCE_PROBE_UNVERIFIED
-GT8_SOURCE_PROBE=$GT8_SERVICE_SOURCE
-gt8_service_exact_source mosey_server || gt8_ns_finish SOURCE_SERVICE_UNVERIFIED
-GT8_SOURCE_SERVER=$GT8_SERVICE_SOURCE
 gt8_ns_target() {
     [ -f "$1" ] && [ ! -L "$1" ] && [ "$(readlink -f "$1")" = "$1" ] && gt8_hash "$1" "$2"
 }
-gt8_ns_target /odm/bin/mosey_load_probe f736d6e9048ed0d80c3211fed3d2d159c347a017d5666be6104472596fb8ed9d \
-    && gt8_ns_target /odm/bin/mosey_server 53aa112866da41f32de05efd91730a27f0f1a40a79ebe61be95bd8d1944a0326 \
-    || gt8_ns_finish BIND_TARGET_UNVERIFIED
 gt8_ns_fingerprint() { stat -c '%d:%i' "$1" && ls -Zd "$1"; }
-GT8_PROBE_BEFORE=$(gt8_ns_fingerprint /odm/bin/mosey_load_probe) || gt8_ns_finish BIND_TARGET_UNVERIFIED
-GT8_SERVER_BEFORE=$(gt8_ns_fingerprint /odm/bin/mosey_server) || gt8_ns_finish BIND_TARGET_UNVERIFIED
 GT8_BOUND_PROBE=false
 GT8_BOUND_SERVER=false
+app_precheck_pid=
 gt8_ns_cleanup() {
     gt8_cleanup_rc=$?
     trap - 0 1 2 15
+    if [ -n "$app_precheck_pid" ]; then
+        wait "$app_precheck_pid" 2>/dev/null || :
+    fi
     gt8_clean=true
     gt8_label_cleanup_all || gt8_clean=false
     if [ "$GT8_BOUND_SERVER" = true ]; then
@@ -77,6 +71,20 @@ gt8_ns_cleanup() {
 }
 trap gt8_ns_cleanup 0
 trap 'exit 1' 1 2 15
+# The app precheck reads system_ext and package metadata. The native
+# preparation below only changes this process tree's /odm and /vendor view.
+timeout -k 1 35 sh "$GT8_BINDDIR/precheck.sh" "$OUT" >"$OUT/binding-precheck.txt" 2>&1 &
+app_precheck_pid=$!
+mosey_check_payload || gt8_ns_finish PAYLOAD_CHECK_FAILED
+gt8_service_exact_source mosey_load_probe || gt8_ns_finish SOURCE_PROBE_UNVERIFIED
+GT8_SOURCE_PROBE=$GT8_SERVICE_SOURCE
+gt8_service_exact_source mosey_server || gt8_ns_finish SOURCE_SERVICE_UNVERIFIED
+GT8_SOURCE_SERVER=$GT8_SERVICE_SOURCE
+gt8_ns_target /odm/bin/mosey_load_probe f736d6e9048ed0d80c3211fed3d2d159c347a017d5666be6104472596fb8ed9d \
+    && gt8_ns_target /odm/bin/mosey_server 53aa112866da41f32de05efd91730a27f0f1a40a79ebe61be95bd8d1944a0326 \
+    || gt8_ns_finish BIND_TARGET_UNVERIFIED
+GT8_PROBE_BEFORE=$(gt8_ns_fingerprint /odm/bin/mosey_load_probe) || gt8_ns_finish BIND_TARGET_UNVERIFIED
+GT8_SERVER_BEFORE=$(gt8_ns_fingerprint /odm/bin/mosey_server) || gt8_ns_finish BIND_TARGET_UNVERIFIED
 for gt8_binary in mosey_load_probe mosey_server; do
     case "$gt8_binary" in mosey_load_probe) gt8_source=$GT8_SOURCE_PROBE ;; mosey_server) gt8_source=$GT8_SOURCE_SERVER ;; esac
     gt8_ns_isolated && gt8_private_mountinfo /proc/self/mountinfo \
@@ -92,5 +100,10 @@ done
 gt8_label_bind_all || gt8_ns_finish LABEL_VIEW_UNVERIFIED
 echo PRIVATE_BIND=PASS
 sh "$MODDIR/load-probe.sh" action || exit $?
+app_precheck_rc=0
+wait "$app_precheck_pid" || app_precheck_rc=$?
+app_precheck_pid=
+[ "$app_precheck_rc" = 0 ] && grep -qx BIND_PRECHECK=PASS "$OUT/binding-precheck.txt" \
+    || gt8_ns_finish APP_BINDING_PRECHECK_FAILED
 sh "$GT8_BINDDIR/service-bind.sh" "$OUT"
 exit $?

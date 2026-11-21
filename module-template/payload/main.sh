@@ -30,130 +30,89 @@ GT8_RUN=$(mktemp -d "$GT8_ROOT/run.XXXXXX") || { echo RESULT=PRIVATE_STATE_UNAVA
 GT8_BINDDIR="$GT8_RUN/binding-code"
 mkdir -m 0700 "$GT8_BINDDIR" || exit 1
 export GT8_BINDDIR
-cp "$GT8_INPUT_DIR/bind-common.sh" "$GT8_BINDDIR/bind-common.sh" || exit 1
-cp "$GT8_INPUT_DIR/precheck.sh" "$GT8_BINDDIR/precheck.sh" || exit 1
-cp "$GT8_INPUT_DIR/ui-lease-monitor.sh" "$GT8_BINDDIR/ui-lease-monitor.sh" || exit 1
-cp "$GT8_INPUT_DIR/app-probe.sh" "$GT8_BINDDIR/app-probe.sh" || exit 1
-cp "$GT8_INPUT_DIR/delegate-policy.sh" "$GT8_BINDDIR/delegate-policy.sh" || exit 1
-cp "$GT8_INPUT_DIR/delegate-runner.sh" "$GT8_BINDDIR/delegate-runner.sh" || exit 1
-cp "$GT8_INPUT_DIR/app-guard.sh" "$GT8_BINDDIR/app-guard.sh" || exit 1
-cp "$GT8_INPUT_DIR/label-bind.sh" "$GT8_BINDDIR/label-bind.sh" || exit 1
-cp "$GT8_INPUT_DIR/service-bind.sh" "$GT8_BINDDIR/service-bind.sh" || exit 1
-cp "$GT8_INPUT_DIR/namespace-bind.sh" "$GT8_BINDDIR/namespace-bind.sh" || exit 1
-cp "$GT8_INPUT_DIR/ui-common.sh" "$GT8_BINDDIR/ui-common.sh" || exit 1
-cp "$GT8_INPUT_DIR/ui-start.sh" "$GT8_BINDDIR/ui-start.sh" || exit 1
-cp "$GT8_INPUT_DIR/ui-close.sh" "$GT8_BINDDIR/ui-close.sh" || exit 1
-cp "$GT8_INPUT_DIR/ui-guard.sh" "$GT8_BINDDIR/ui-guard.sh" || exit 1
-cp "$GT8_INPUT_DIR/ui-meta.sh" "$GT8_BINDDIR/ui-meta.sh" || exit 1
-cp "$GT8_INPUT_DIR/transfer-idle.sh" "$GT8_BINDDIR/transfer-idle.sh" || exit 1
-cp "$GT8_INPUT_DIR/provider-control.sh" "$GT8_BINDDIR/provider-control.sh" || exit 1
-cp "$GT8_INPUT_DIR/provider-guard.sh" "$GT8_BINDDIR/provider-guard.sh" || exit 1
-cp "$GT8_INPUT_DIR/current-code-profile.sh" "$GT8_BINDDIR/current-code-profile.sh" || exit 1
-cp "$GT8_INPUT_DIR/updated-package-checks.sh" "$GT8_BINDDIR/updated-package-checks.sh" || exit 1
-cp "$GT8_INPUT_DIR/app-stream.sh" "$GT8_BINDDIR/app-stream.sh" || exit 1
-cp "$GT8_INPUT_DIR/soak-metrics.sh" "$GT8_BINDDIR/soak-metrics.sh" || exit 1
-cp "$GT8_INPUT_DIR/gms-main-pid.awk" "$GT8_BINDDIR/gms-main-pid.awk" || exit 1
-cp "$GT8_INPUT_DIR/lease-gate.sh" "$GT8_BINDDIR/lease-gate.sh" || exit 1
-cp "$GT8_INPUT_DIR/handoff-lock.sh" "$GT8_BINDDIR/handoff-lock.sh" || exit 1
-cp "$GT8_INPUT_DIR/owner-guard.sh" "$GT8_BINDDIR/owner-guard.sh" || exit 1
-cp "$GT8_INPUT_DIR/heartbeat.sh" "$GT8_BINDDIR/heartbeat.sh" || exit 1
-cp "$GT8_INPUT_DIR/quiet-window.sh" "$GT8_BINDDIR/quiet-window.sh" || exit 1
-cp "$GT8_INPUT_DIR/provider-state.awk" "$GT8_BINDDIR/provider-state.awk" || exit 1
-cp "$GT8_INPUT_DIR/gms-transfer-state.awk" "$GT8_BINDDIR/gms-transfer-state.awk" || exit 1
-cp "$GT8_INPUT_DIR/quiet-state.sh" "$GT8_BINDDIR/quiet-state.sh" || exit 1
-cp "$GT8_INPUT_DIR/outer-watchdog" "$GT8_BINDDIR/outer-watchdog" || exit 1
-chmod 0700 "$GT8_BINDDIR/outer-watchdog" || exit 1
-cp "$GT8_INPUT_DIR/gt8_service_watchdog_soak" "$GT8_BINDDIR/gt8_service_watchdog_soak" || exit 1
-chmod 0700 "$GT8_BINDDIR/gt8_service_watchdog_soak" || exit 1
+cp \
+    "$GT8_INPUT_DIR/bind-common.sh" \
+    "$GT8_INPUT_DIR/precheck.sh" \
+    "$GT8_INPUT_DIR/ui-lease-monitor.sh" \
+    "$GT8_INPUT_DIR/app-probe.sh" \
+    "$GT8_INPUT_DIR/delegate-policy.sh" \
+    "$GT8_INPUT_DIR/delegate-runner.sh" \
+    "$GT8_INPUT_DIR/app-guard.sh" \
+    "$GT8_INPUT_DIR/label-bind.sh" \
+    "$GT8_INPUT_DIR/service-bind.sh" \
+    "$GT8_INPUT_DIR/namespace-bind.sh" \
+    "$GT8_INPUT_DIR/ui-common.sh" \
+    "$GT8_INPUT_DIR/ui-start.sh" \
+    "$GT8_INPUT_DIR/ui-close.sh" \
+    "$GT8_INPUT_DIR/ui-guard.sh" \
+    "$GT8_INPUT_DIR/ui-meta.sh" \
+    "$GT8_INPUT_DIR/transfer-idle.sh" \
+    "$GT8_INPUT_DIR/provider-control.sh" \
+    "$GT8_INPUT_DIR/provider-guard.sh" \
+    "$GT8_INPUT_DIR/current-code-profile.sh" \
+    "$GT8_INPUT_DIR/updated-package-checks.sh" \
+    "$GT8_INPUT_DIR/app-stream.sh" \
+    "$GT8_INPUT_DIR/soak-metrics.sh" \
+    "$GT8_INPUT_DIR/gms-main-pid.awk" \
+    "$GT8_INPUT_DIR/lease-gate.sh" \
+    "$GT8_INPUT_DIR/handoff-lock.sh" \
+    "$GT8_INPUT_DIR/owner-guard.sh" \
+    "$GT8_INPUT_DIR/heartbeat.sh" \
+    "$GT8_INPUT_DIR/quiet-window.sh" \
+    "$GT8_INPUT_DIR/provider-state.awk" \
+    "$GT8_INPUT_DIR/gms-transfer-state.awk" \
+    "$GT8_INPUT_DIR/quiet-state.sh" \
+    "$GT8_INPUT_DIR/outer-watchdog" \
+    "$GT8_INPUT_DIR/gt8_service_watchdog_soak" \
+    "$GT8_BINDDIR/" || exit 1
+chmod 0700 "$GT8_BINDDIR/outer-watchdog" "$GT8_BINDDIR/gt8_service_watchdog_soak" || exit 1
 bind_bootstrap_ok() {
-    b_sum=$(sha256sum "$GT8_BINDDIR/ui-lease-monitor.sh") || return 1
-    [ "${b_sum%% *}" = 86895bae929c389ee173c879bff9026a5c39fbcd08fd51fd944bd72f683b3ac5 ] || return 1
-    b_sum=$(sha256sum "$GT8_BINDDIR/handoff-lock.sh") || return 1
-    [ "${b_sum%% *}" = b30ce8a43d9d6ab7390ff8d221bcb9cd0a03d666a3ac3b4d5dffe91a100ba892 ] || return 1
-    b_sum=$(sha256sum "$GT8_BINDDIR/owner-guard.sh") || return 1
-    [ "${b_sum%% *}" = 180a2960f5cc0862ccb6329f92c067612248812f01d23c57641e149dac93bf40 ] || return 1
-    b_sum=$(sha256sum "$GT8_BINDDIR/quiet-window.sh") || return 1
-    [ "${b_sum%% *}" = a895f8d0aaf0fd731099e42bff3eebd5860f8b8a70da3bb1e2a11f8b162e3023 ] || return 1
-    b_sum=$(sha256sum "$GT8_BINDDIR/provider-state.awk") || return 1
-    [ "${b_sum%% *}" = 96533a64020ea934e9556bf950a2c50fcfdadfade8be7e5ab88ad8a88febddeb ] || return 1
-    b_sum=$(sha256sum "$GT8_BINDDIR/gms-transfer-state.awk") || return 1
-    [ "${b_sum%% *}" = dcb506cdc7394534a84b15f7defffc40ffd070db9d0cd8084d5876df62fc60b7 ] || return 1
-    b_sum=$(sha256sum "$GT8_BINDDIR/quiet-state.sh") || return 1
-    [ "${b_sum%% *}" = f658a7511df976329fef4349364f8200451f9a163ef59e46735f9ca7af687116 ] || return 1
-    b_sum=$(sha256sum "$GT8_BINDDIR/heartbeat.sh") || return 1
-    [ "${b_sum%% *}" = 306077f58b97ccb9d5a14764982e97170425222a691b3718241245e21f6f793f ] || return 1
-    b_sum=$(sha256sum "$GT8_BINDDIR/lease-gate.sh") || return 1
-    [ "${b_sum%% *}" = e48ed1610c628e55ac10bcf576b17d0d7017921cfd331943de12577ca25020e2 ] || return 1
-    b_sum=$(sha256sum "$GT8_BINDDIR/outer-watchdog") || return 1
-    [ "${b_sum%% *}" = 883c7527aa8ee2bdf7e7da963f30da79e5d846525bcdc4bd685bb276b1e8266a ] || return 1
-    b_sum=$(sha256sum "$GT8_BINDDIR/gms-main-pid.awk") || return 1
-    [ "${b_sum%% *}" = 9439b659a188e5ded196d4d45ba3b51053eb9f046da0da0c87be2cf73a6f6df7 ] || return 1
-    b_sum=$(sha256sum "$GT8_BINDDIR/soak-metrics.sh") || return 1
-    [ "${b_sum%% *}" = 8ad94e746f13c83af740ea1fbd9ef3bfd197e37e6bb075dbc62cd59024b00c68 ] || return 1
-    b_sum=$(sha256sum "$GT8_BINDDIR/gt8_service_watchdog_soak") || return 1
-    [ "${b_sum%% *}" = ff319e66b79a00a6ec3a9605ac7b60b24071c684393c98719f8729d39143c24a ] || return 1
-    b_sum=$(sha256sum "$GT8_BINDDIR/current-code-profile.sh") || return 1
-    [ "${b_sum%% *}" = 5500ce4caf453231dbc3460250ed028aa73be3045b0c889b12b71894b65bb012 ] || return 1
-    b_sum=$(sha256sum "$GT8_BINDDIR/updated-package-checks.sh") || return 1
-    [ "${b_sum%% *}" = 6f91973ddc2eba7d12a8620d5544f067be1e3472331a1efdaa45718d5d321d69 ] || return 1
-    b_sum=$(sha256sum "$GT8_BINDDIR/app-stream.sh" 2>/dev/null) || return 1
-    [ "${b_sum%% *}" = 5a578ead16c302858c8bbd174072030820e12ffb748beae1d61cebb6cd31fff2 ] || return 1
-    b_sum=$(sha256sum "$GT8_BINDDIR/provider-guard.sh" 2>/dev/null) || return 1
-    [ "${b_sum%% *}" = 8351ae8ea68a9231734fe9e78847d6c788ac9d11e132a80ca6025b5e60e1f6b7 ] || return 1
-    b_sum=$(sha256sum "$GT8_BINDDIR/provider-control.sh" 2>/dev/null) || return 1
-    [ "${b_sum%% *}" = 58059330e3dcf7117b7c97ba5e590958d33de3dea8e836415b9435c8ddc99558 ] || return 1
-    b_sum=$(sha256sum "$GT8_BINDDIR/transfer-idle.sh" 2>/dev/null) || return 1
-    [ "${b_sum%% *}" = e156907644bfdaecfd9dbc3e5d5df281d5fe3aeea2a65efd39825c55d3e87db2 ] || return 1
-    b_sum=$(sha256sum "$GT8_BINDDIR/ui-meta.sh" 2>/dev/null) || return 1
-    [ "${b_sum%% *}" = e495d4f8afba64fb9d93ce8a68a5c51db4c1e172e17e941179eb03d832419412 ] || return 1
-    b_sum=$(sha256sum "$GT8_BINDDIR/ui-close.sh" 2>/dev/null) || return 1
-    [ "${b_sum%% *}" = e9256785996b5fb083c38cf5234662e9ec8fe6e69fb66f5807e27b0cb5beb2a7 ] || return 1
-    b_sum=$(sha256sum "$GT8_BINDDIR/ui-common.sh" 2>/dev/null) || return 1
-    [ "${b_sum%% *}" = aa5445b5d5370407cbbc2217c75bc19d320fbc515f4a376fc1658fa8589eee46 ] || return 1
-    b_sum=$(sha256sum "$GT8_BINDDIR/ui-start.sh" 2>/dev/null) || return 1
-    [ "${b_sum%% *}" = a0e9fb384a483c271fc4284af0600cc931dfc54da800e2f939ac61c5f88377c5 ] || return 1
-    b_sum=$(sha256sum "$GT8_BINDDIR/ui-guard.sh" 2>/dev/null) || return 1
-    [ "${b_sum%% *}" = 61d891907545d681033d34ee1fa3d406247d95bf2299b31fa105c17380673868 ] || return 1
-    b_sum=$(sha256sum "$GT8_BINDDIR/bind-common.sh" 2>/dev/null) || return 1
-    [ "${b_sum%% *}" = e6a75e680b406e4a18f07ef1e9627e2cc02aeb20046ff44a6b996486d8d3ab7f ] || return 1
-    b_sum=$(sha256sum "$GT8_BINDDIR/precheck.sh" 2>/dev/null) || return 1
-    [ "${b_sum%% *}" = f7ce6de73b088f695e9eb1717f4ecf879bb04fcd07f0e74a9b4ce23db89e6330 ] || return 1
-    b_sum=$(sha256sum "$GT8_BINDDIR/delegate-policy.sh" 2>/dev/null) || return 1
-    [ "${b_sum%% *}" = be01bfd183ce2cdc8de97fdcfcbf4905e6484689741b3e8a2b268f58544d4ca4 ] || return 1
-    b_sum=$(sha256sum "$GT8_BINDDIR/delegate-runner.sh" 2>/dev/null) || return 1
-    [ "${b_sum%% *}" = 116fdff6b9c1533257166de7359692c03a7bae6f80e0d4d55738a7f31d10a133 ] || return 1
-    b_sum=$(sha256sum "$GT8_BINDDIR/app-probe.sh" 2>/dev/null) || return 1
-    [ "${b_sum%% *}" = b0a6ddd23bfa383f864d5d4f5db08f9203aa2a1a5b690ac3a0439704c6ba1523 ] || return 1
-    b_sum=$(sha256sum "$GT8_BINDDIR/app-guard.sh" 2>/dev/null) || return 1
-    [ "${b_sum%% *}" = 8bb7e18df259daa5eb036122ea10c5e88e22f5b49ccc7898b59e0962eb8a07bf ] || return 1
-    b_sum=$(sha256sum "$GT8_BINDDIR/label-bind.sh" 2>/dev/null) || return 1
-    [ "${b_sum%% *}" = 54baa145b00cad3d3bb99b602096768fd022df44bf476aa47635dbe2c7eac721 ] || return 1
-    b_sum=$(sha256sum "$GT8_BINDDIR/service-bind.sh" 2>/dev/null) || return 1
-    [ "${b_sum%% *}" = 3ea30e18942a5ffa98f246c809e1356846a75c4f7a31ff613add5b02204fd35e ] || return 1
-    b_sum=$(sha256sum "$GT8_BINDDIR/namespace-bind.sh" 2>/dev/null) || return 1
-    [ "${b_sum%% *}" = df7dcc31f9775dcd29a53492b3465bf4aea644269bcb4e3a987a5de296dc795e ] || return 1
-    b_sum=$(sha256sum "$MODDIR/common.sh" 2>/dev/null) || return 1
-    [ "${b_sum%% *}" = d52cc0d31e62d3260b8b0a5ccc03387aeb12a72ecd8faa1fc235702649f1cfdb ] || return 1
-    b_sum=$(sha256sum "$MODDIR/namespace-common.sh" 2>/dev/null) || return 1
-    [ "${b_sum%% *}" = 5dd1a283ccd75d33e6f2ba6ce6409a0f22f5776720e3415137baf5773d95feba ] || return 1
-    b_sum=$(sha256sum "$MODDIR/service-common.sh" 2>/dev/null) || return 1
-    [ "${b_sum%% *}" = d613e77c30af5cb4be681fce1d35d557e4891848071262de5aa0d272a4ebfd59 ] || return 1
-    b_sum=$(sha256sum "$MODDIR/registration-checks.sh" 2>/dev/null) || return 1
-    [ "${b_sum%% *}" = 8969e478df223ddda6a3f54e179cfd52e240ffe70ee4bea7441cb65e0a66a3fd ] || return 1
-    b_sum=$(sha256sum "$MODDIR/payload.sha256" 2>/dev/null) || return 1
-    [ "${b_sum%% *}" = 45f9b82761465398ecba0237eb06824f96e3e76b53e1d1a0c552f15a21660c9c ] || return 1
-    b_sum=$(sha256sum "$MODDIR/tools/gt8_service_watchdog" 2>/dev/null) || return 1
-    [ "${b_sum%% *}" = da72d9f756cfe06795b0b84567fa5e6ad45c35ca6a8c21b58bb9c0d0a6fa6cc6 ] || return 1
-    b_sum=$(sha256sum "/data/adb/modules/gt8pro.mosey.integrated/base-app/common.sh" 2>/dev/null) || return 1
-    [ "${b_sum%% *}" = d59e795b326a989289e72f27dcd0b9e89eed687d45a60748c04c9ff079d8c6ac ] || return 1
-    b_sum=$(sha256sum "/data/adb/modules/gt8pro.mosey.integrated/base-app/target-checks.sh" 2>/dev/null) || return 1
-    [ "${b_sum%% *}" = 4d4835877fbaf38f97eec537ef74c6bfcb940d07fc40cebe906e9c5bff1141b0 ] || return 1
-    b_sum=$(sha256sum "/data/adb/modules/gt8pro.mosey.integrated/base-app/package-checks.sh" 2>/dev/null) || return 1
-    [ "${b_sum%% *}" = 839c474d335817d7eff1354b77d1f65b44681bd59ad193b5b2e143b65ee90183 ] || return 1
-    b_sum=$(sha256sum "/data/adb/modules/gt8pro.mosey.integrated/base-app/compatibility.sh" 2>/dev/null) || return 1
-    [ "${b_sum%% *}" = 8fa064a913ae36f08cef228ce9c1849491298439824f8c087a9fdcc343cb0dc9 ] || return 1
-    b_sum=$(sha256sum "/data/adb/modules/gt8pro.mosey.integrated/base-app/payload.sha256" 2>/dev/null) || return 1
-    [ "${b_sum%% *}" = e37ee7846c3857dc0186b3269960eac89cc394dcde0f024cf53405fa253bb255 ] || return 1
+    sha256sum -c - >/dev/null 2>&1 <<GT8_BOOTSTRAP_SHA256
+c8e84d3a45938dd03cecb1a2dbd24054c262d5de6b286118d10403e7daf6c985  $GT8_BINDDIR/ui-lease-monitor.sh
+b30ce8a43d9d6ab7390ff8d221bcb9cd0a03d666a3ac3b4d5dffe91a100ba892  $GT8_BINDDIR/handoff-lock.sh
+180a2960f5cc0862ccb6329f92c067612248812f01d23c57641e149dac93bf40  $GT8_BINDDIR/owner-guard.sh
+a895f8d0aaf0fd731099e42bff3eebd5860f8b8a70da3bb1e2a11f8b162e3023  $GT8_BINDDIR/quiet-window.sh
+96533a64020ea934e9556bf950a2c50fcfdadfade8be7e5ab88ad8a88febddeb  $GT8_BINDDIR/provider-state.awk
+dcb506cdc7394534a84b15f7defffc40ffd070db9d0cd8084d5876df62fc60b7  $GT8_BINDDIR/gms-transfer-state.awk
+f658a7511df976329fef4349364f8200451f9a163ef59e46735f9ca7af687116  $GT8_BINDDIR/quiet-state.sh
+306077f58b97ccb9d5a14764982e97170425222a691b3718241245e21f6f793f  $GT8_BINDDIR/heartbeat.sh
+e48ed1610c628e55ac10bcf576b17d0d7017921cfd331943de12577ca25020e2  $GT8_BINDDIR/lease-gate.sh
+883c7527aa8ee2bdf7e7da963f30da79e5d846525bcdc4bd685bb276b1e8266a  $GT8_BINDDIR/outer-watchdog
+9439b659a188e5ded196d4d45ba3b51053eb9f046da0da0c87be2cf73a6f6df7  $GT8_BINDDIR/gms-main-pid.awk
+8ad94e746f13c83af740ea1fbd9ef3bfd197e37e6bb075dbc62cd59024b00c68  $GT8_BINDDIR/soak-metrics.sh
+ff319e66b79a00a6ec3a9605ac7b60b24071c684393c98719f8729d39143c24a  $GT8_BINDDIR/gt8_service_watchdog_soak
+5500ce4caf453231dbc3460250ed028aa73be3045b0c889b12b71894b65bb012  $GT8_BINDDIR/current-code-profile.sh
+6f91973ddc2eba7d12a8620d5544f067be1e3472331a1efdaa45718d5d321d69  $GT8_BINDDIR/updated-package-checks.sh
+5a578ead16c302858c8bbd174072030820e12ffb748beae1d61cebb6cd31fff2  $GT8_BINDDIR/app-stream.sh
+8351ae8ea68a9231734fe9e78847d6c788ac9d11e132a80ca6025b5e60e1f6b7  $GT8_BINDDIR/provider-guard.sh
+b2fc4b3a2d0ae6dae9076d95aa86e58625e5e4a341868f70c394907e0137ffdb  $GT8_BINDDIR/provider-control.sh
+e156907644bfdaecfd9dbc3e5d5df281d5fe3aeea2a65efd39825c55d3e87db2  $GT8_BINDDIR/transfer-idle.sh
+e495d4f8afba64fb9d93ce8a68a5c51db4c1e172e17e941179eb03d832419412  $GT8_BINDDIR/ui-meta.sh
+e9256785996b5fb083c38cf5234662e9ec8fe6e69fb66f5807e27b0cb5beb2a7  $GT8_BINDDIR/ui-close.sh
+aa5445b5d5370407cbbc2217c75bc19d320fbc515f4a376fc1658fa8589eee46  $GT8_BINDDIR/ui-common.sh
+a0e9fb384a483c271fc4284af0600cc931dfc54da800e2f939ac61c5f88377c5  $GT8_BINDDIR/ui-start.sh
+61d891907545d681033d34ee1fa3d406247d95bf2299b31fa105c17380673868  $GT8_BINDDIR/ui-guard.sh
+e6a75e680b406e4a18f07ef1e9627e2cc02aeb20046ff44a6b996486d8d3ab7f  $GT8_BINDDIR/bind-common.sh
+f7ce6de73b088f695e9eb1717f4ecf879bb04fcd07f0e74a9b4ce23db89e6330  $GT8_BINDDIR/precheck.sh
+be01bfd183ce2cdc8de97fdcfcbf4905e6484689741b3e8a2b268f58544d4ca4  $GT8_BINDDIR/delegate-policy.sh
+116fdff6b9c1533257166de7359692c03a7bae6f80e0d4d55738a7f31d10a133  $GT8_BINDDIR/delegate-runner.sh
+b0a6ddd23bfa383f864d5d4f5db08f9203aa2a1a5b690ac3a0439704c6ba1523  $GT8_BINDDIR/app-probe.sh
+8bb7e18df259daa5eb036122ea10c5e88e22f5b49ccc7898b59e0962eb8a07bf  $GT8_BINDDIR/app-guard.sh
+54baa145b00cad3d3bb99b602096768fd022df44bf476aa47635dbe2c7eac721  $GT8_BINDDIR/label-bind.sh
+a7d93ca78fb60cc5e9da6560efba97de1e9d8d743ed1cda3861ddf8e2edded8f  $GT8_BINDDIR/service-bind.sh
+c3a19b3054f7f60ce76b65428b6a21d71e026afd75bdef41b156ba9241d9b23d  $GT8_BINDDIR/namespace-bind.sh
+d52cc0d31e62d3260b8b0a5ccc03387aeb12a72ecd8faa1fc235702649f1cfdb  $MODDIR/common.sh
+5dd1a283ccd75d33e6f2ba6ce6409a0f22f5776720e3415137baf5773d95feba  $MODDIR/namespace-common.sh
+d613e77c30af5cb4be681fce1d35d557e4891848071262de5aa0d272a4ebfd59  $MODDIR/service-common.sh
+8969e478df223ddda6a3f54e179cfd52e240ffe70ee4bea7441cb65e0a66a3fd  $MODDIR/registration-checks.sh
+45f9b82761465398ecba0237eb06824f96e3e76b53e1d1a0c552f15a21660c9c  $MODDIR/payload.sha256
+da72d9f756cfe06795b0b84567fa5e6ad45c35ca6a8c21b58bb9c0d0a6fa6cc6  $MODDIR/tools/gt8_service_watchdog
+d59e795b326a989289e72f27dcd0b9e89eed687d45a60748c04c9ff079d8c6ac  /data/adb/modules/gt8pro.mosey.integrated/base-app/common.sh
+4d4835877fbaf38f97eec537ef74c6bfcb940d07fc40cebe906e9c5bff1141b0  /data/adb/modules/gt8pro.mosey.integrated/base-app/target-checks.sh
+839c474d335817d7eff1354b77d1f65b44681bd59ad193b5b2e143b65ee90183  /data/adb/modules/gt8pro.mosey.integrated/base-app/package-checks.sh
+8fa064a913ae36f08cef228ce9c1849491298439824f8c087a9fdcc343cb0dc9  /data/adb/modules/gt8pro.mosey.integrated/base-app/compatibility.sh
+e37ee7846c3857dc0186b3269960eac89cc394dcde0f024cf53405fa253bb255  /data/adb/modules/gt8pro.mosey.integrated/base-app/payload.sha256
+GT8_BOOTSTRAP_SHA256
 }
 bind_bootstrap_ok || { echo RESULT=BASE_OR_BUNDLE_UNVERIFIED; exit 1; }
 . "$GT8_BINDDIR/owner-guard.sh"
@@ -184,14 +143,6 @@ if ! mosey_check_target >"$GT8_RUN/target.txt" 2>&1; then
     exit 1
 fi
 echo TARGET_CHECK=PASS
-if ! sh "$GT8_BINDDIR/precheck.sh" "$GT8_RUN" >"$GT8_RUN/binding-precheck.txt" 2>&1; then
-    awk '/^BIND_PRECHECK=(CALLER_UNVERIFIED|PRIVATE_STATE_UNVERIFIED|MODULE_INACTIVE|APP_PAYLOAD_FAILED|MAIN_USER_REQUIRED|BOOT_NOT_COMPLETE|GUARD_TOOL_UNAVAILABLE|SYSTEM_SERVER_UNVERIFIED|APP_MOUNT_UNVERIFIED|PACKAGE_QUERY_FAILED|APP_IDENTITY_UNVERIFIED|APP_UID_UNVERIFIED|CORE_PRIVILEGES_MISSING|RUNTIME_PERMISSIONS_MISSING|PROVIDER_QUERY_FAILED|PROVIDER_UNVERIFIED|APP_ALREADY_RUNNING|APP_STATE_QUERY_FAILED|APP_SERVICE_ALREADY_PRESENT|SYSTEM_SERVER_CHANGED|PRIVATE_STATE_FAILED)$/ {print}' "$GT8_RUN/binding-precheck.txt"
-    echo RESULT=APP_BINDING_PRECHECK_FAILED
-    exit 1
-fi
-echo CORE_PRIVILEGES=PASS
-echo RUNTIME_PERMISSIONS=PASS
-echo NETWORK_PERMISSION_GAP=UNRESOLVED
 GT8_BB=/data/adb/ksu/bin/busybox
 [ -x "$GT8_BB" ] && [ "$(stat -c '%u:%a' "$GT8_BB")" = 0:755 ] \
     || { echo RESULT=NAMESPACE_TOOLS_UNAVAILABLE; exit 1; }
@@ -251,6 +202,11 @@ if ! gt8_namespace_parent_view >"$GT8_RUN/parent-after.txt" 2>&1 \
     exit 1
 fi
 echo PARENT_VIEW=UNCHANGED
+if grep -qx BIND_PRECHECK=PASS "$GT8_RUN/binding-precheck.txt" 2>/dev/null; then
+    echo CORE_PRIVILEGES=PASS
+    echo RUNTIME_PERMISSIONS=PASS
+    echo NETWORK_PERMISSION_GAP=UNRESOLVED
+fi
 bind_emit "$GT8_RUN/probe.txt"
 if [ "$gt8_rc" = 0 ] && gt8_service_report_ok "$GT8_RUN/probe.txt" && bind_label_report_ok "$GT8_RUN/probe.txt"; then
     echo NAMESPACE_ISOLATION=PASS
@@ -274,6 +230,9 @@ else
     [ -z "$gt8_watch_rc" ] || printf 'WATCHDOG_EXIT_CODE=%s\n' "$gt8_watch_rc"
     gt8_result=$(sed -n 's/^RESULT=//p' "$GT8_RUN/probe.txt" | tail -n 1)
     case "$gt8_result" in
+        APP_BINDING_PRECHECK_FAILED)
+            awk '/^BIND_PRECHECK=(CALLER_UNVERIFIED|PRIVATE_STATE_UNVERIFIED|MODULE_INACTIVE|APP_PAYLOAD_FAILED|MAIN_USER_REQUIRED|BOOT_NOT_COMPLETE|GUARD_TOOL_UNAVAILABLE|SYSTEM_SERVER_UNVERIFIED|APP_MOUNT_UNVERIFIED|PACKAGE_QUERY_FAILED|APP_IDENTITY_UNVERIFIED|APP_UID_UNVERIFIED|CORE_PRIVILEGES_MISSING|RUNTIME_PERMISSIONS_MISSING|PROVIDER_QUERY_FAILED|PROVIDER_UNVERIFIED|APP_ALREADY_RUNNING|APP_STATE_QUERY_FAILED|APP_SERVICE_ALREADY_PRESENT|SYSTEM_SERVER_CHANGED|PRIVATE_STATE_FAILED)$/ {print}' "$GT8_RUN/binding-precheck.txt"
+            echo RESULT=APP_BINDING_PRECHECK_FAILED ;;
         '')
             case "$gt8_rc" in
                 124|137) echo RESULT=PROBE_TIMEOUT ;;

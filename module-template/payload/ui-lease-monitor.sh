@@ -15,12 +15,14 @@ case "$parent:$token" in *[!0-9:]*|:*|*:)exit 1;;esac
 . "$GT8_BINDDIR/handoff-lock.sh"
 parent_alive(){ [ "$(awk 'NR==1{sub(/^.*[)] /,"");print $20}' "/proc/$parent/stat" 2>/dev/null)" = "$token" ]; }
 closed_safe(){
- (timeout -k 1 3 dumpsys window displays;printf '\n__RC=%s\n' "$?") 2>&1 | awk '
+ (timeout -k 1 2 dumpsys window displays;printf '\n__RC=%s\n' "$?") 2>&1 | awk '
  /^WINDOW MANAGER DISPLAY CONTENTS [(]dumpsys window displays[)]$/{headers++;inside=1;next}
  /^WINDOW MANAGER DISPLAY CONTENTS [(]EXT[)]$/{inside=0;next}
  /^__RC=0$/{rc++;next}
- inside&&/mCurrentFocus=/{focus++;if(!/ u0 [^ ]+\/[^ ]+/)bad=1;if(/com[.]android[.]intentresolver\/|com[.]android[.]documentsui\/|com[.]google[.]android[.]documentsui\/|com[.]coloros[.]filemanager\/com[.]oplus[.]filemanager[.]picker[.]PickerActivity([ }]|$)|com[.]google[.]android[.]gms\/[^ ]*nearby[.]sharing[.]/)protected++}
- END{exit !(headers==1&&rc==1&&focus==1&&!protected&&!bad)}'
+ inside&&/^[ ]*Display: mDisplayId=/{displays++;primary=($0~/^[ ]*Display: mDisplayId=0[ ]/);if(primary)primaryCount++;else others[displays]=1;next}
+ inside&&/mCurrentFocus=/{if(!displays){bad=1;next}if(primary){focus++;if(!/ u0 [^ ]+\/[^ ]+/)bad=1;if(/com[.]android[.]intentresolver\/|com[.]android[.]documentsui\/|com[.]google[.]android[.]documentsui\/|com[.]coloros[.]filemanager\/com[.]oplus[.]filemanager[.]picker[.]PickerActivity([ }]|$)|com[.]google[.]android[.]gms\/[^ ]*nearby[.]sharing[.]/)picker++}else{otherFocus[displays]++;if($0!~/^[ ]*mCurrentFocus=null[ ]*$/)bad=1}next}
+ inside&&/mFocusedApp=/&&!primary{if(!displays){bad=1;next}otherApp[displays]++;if($0!~/^[ ]*mFocusedApp=null[ ]*$/)bad=1;next}
+ END{for(i in others)if(otherFocus[i]!=1||otherApp[i]!=1)bad=1;exit !(headers==1&&rc==1&&primaryCount==1&&focus==1&&!picker&&!bad)}'
 }
 daily=0
 if [ -e "$OUT/daily-module-session" ] || [ -L "$OUT/daily-module-session" ];then

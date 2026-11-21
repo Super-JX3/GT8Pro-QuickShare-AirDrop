@@ -7,7 +7,7 @@ umask 077
 set -f
 module=/data/adb/modules/gt8pro.mosey.integrated
 root=/data/adb/gt8pro-mosey-daily
-manifest_digest=85d945aa836f303772bc23377edc925ddefdcaf00247323335725189530469b9
+manifest_digest=c6eff2ad8e1f54a44ae3116d8c31bf5283c19c25df2849f58d832f98feeb55dc
 d=$root/runtime-integrated-$manifest_digest
 GT8_RUNTIME_DIR=$d
 export GT8_RUNTIME_DIR
@@ -15,7 +15,7 @@ export GT8_RUNTIME_DIR
 [ "$(getprop ro.product.model)" = RMX5200 ] && [ "$(getprop ro.build.display.id)" = 'RMX5200_16.0.10.501(CN01)' ] || exit 1
 [ ! -L "$module" ] && [ -d "$module" ] && [ ! -L "$module/payload" ] && [ -d "$module/payload" ] || exit 1
 for flag in disable remove update;do [ ! -e "$module/$flag" ] && [ ! -L "$module/$flag" ] || exit 0;done
-[ ! -L "$module/payload.sha256" ] && [ "$(sha256sum "$module/payload.sha256" | cut -d ' ' -f1)" = 85d945aa836f303772bc23377edc925ddefdcaf00247323335725189530469b9 ] || exit 1
+[ ! -L "$module/payload.sha256" ] && [ "$(sha256sum "$module/payload.sha256" | cut -d ' ' -f1)" = c6eff2ad8e1f54a44ae3116d8c31bf5283c19c25df2849f58d832f98feeb55dc ] || exit 1
 [ ! -L "$root" ] || exit 1
 mkdir -m 0700 -p "$root" || exit 1
 [ "$(stat -c '%u:%a' "$root")" = 0:700 ] && [ "$(readlink -f "$root")" = "$root" ] || exit 1
@@ -92,9 +92,25 @@ export GT8_DAILY_MODULE
 # is absent. Blocked checks do not consume the watcher restart budget.
 # A bounded retry cannot establish a transfer admission barrier.
 . "$d/bind-common.sh"
+. "$d/owner-guard.sh"
+watch_lock_retryable(){
+ lock_dir=$1/watch-lock
+ record=$lock_dir/owner
+ [ ! -L "$lock_dir" ] && [ ! -L "$record" ] || return 1
+ [ -e "$lock_dir" ] || return 0
+ [ "$(stat -c '%u:%a' "$lock_dir" 2>/dev/null)" = 0:700 ] \
+  && [ -f "$record" ] && [ "$(stat -c '%u:%a' "$record" 2>/dev/null)" = 0:600 ] \
+  && [ "$(wc -l <"$record")" -eq 1 ] || return 1
+ read -r old_pid old_token extra <"$record" || return 1
+ [ -z "$extra" ] || return 1
+ case "$old_pid:$old_token" in *[!0-9:]*|:*|*:) return 1;;esac
+ [ "$old_pid" -gt 1 ] 2>/dev/null && [ "$old_token" -gt 0 ] 2>/dev/null || return 1
+ # The watcher rechecks the old owner under its recovery lock.
+ ! gt8_owner_alive "$old_pid" "$old_token" /proc
+}
 retry_quiet(){
  r=/data/adb/gt8pro-mosey-service
- [ ! -e "$r/action-lock" ] && [ ! -e "$r/watch-lock" ] && [ -z "$(pidof mosey_server)" ] || return 1
+ [ ! -e "$r/action-lock" ] && watch_lock_retryable "$r" && [ -z "$(pidof mosey_server)" ] || return 1
  # Recover only a recorded, identity-verified orphan after the old watcher exits.
  apps=$(gt8_mosey_main_pids) || return 1
  if [ -n "$apps" ];then sh "$d/recover-v9.sh" supervisor || return 1;fi
@@ -108,7 +124,7 @@ retry_quiet(){
   [ "$(sh "$d/transfer-idle.sh")" = TRANSFER_CLASS=IDLE ] || return 1
   [ "$sample" = 3 ] || sleep 1
  done
- [ ! -e "$r/action-lock" ] && [ ! -e "$r/watch-lock" ] && [ -z "$(pidof mosey_server)" ]
+ [ ! -e "$r/action-lock" ] && watch_lock_retryable "$r" && [ -z "$(pidof mosey_server)" ]
 }
 # After the finite retry budget is exhausted, stay dormant until the share
 # flow is confirmed closed and all session state is quiescent. This rearms the
@@ -171,6 +187,7 @@ wait_for_rearm(){
  done
 ) 2>&1 | while IFS= read -r line;do
  case "$line" in
+  WATCH_WAKE=QUICK_SHARE) log -t GT8ProDaily "$line" 2>/dev/null || :;;
   WATCH_SESSION=BEGIN|WATCH_SESSION_END=UI_CLOSED_AND_CLEAN|WATCH_SESSION_END=MODULE_DISABLED_AND_CLEAN|WATCH_REARM=READY|WATCHER=DISABLED|WATCH_ADMISSION=UNCONFIRMED|WATCH_RETRY=START|WATCH_RETRY=BLOCKED|WATCH_RETRY=EXHAUSTED|WATCH_RETRY=REARMED|WATCH_EXIT=[0-9]*)
    log -t GT8ProDaily "$line" 2>/dev/null || :
    (set -C; printf '%s\n' "$line" >"$root/.status.$$" && mv -f "$root/.status.$$" "$root/status") || :;;

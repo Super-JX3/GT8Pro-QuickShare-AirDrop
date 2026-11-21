@@ -9,10 +9,10 @@ ROOT = Path(__file__).resolve().parent
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Build the 0.15.2 experimental module')
+    parser = argparse.ArgumentParser(description='Build the 0.16.0 experimental module')
     parser.add_argument('--input', action='append', type=Path,
                         help='Locally obtained files, directory or ZIP; may be repeated')
-    parser.add_argument('--output', type=Path, default=ROOT/'dist/GT8Pro-QuickShare-0.15.2.zip')
+    parser.add_argument('--output', type=Path, default=ROOT/'dist/GT8Pro-QuickShare-0.16.0.zip')
     args = parser.parse_args()
     inputs = args.input or [ROOT/'local-inputs']
     missing = [str(path) for path in inputs if not path.exists()]

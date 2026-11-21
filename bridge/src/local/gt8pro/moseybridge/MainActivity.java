@@ -19,10 +19,14 @@ import android.widget.TextView;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public final class MainActivity extends Activity {
  private TextView status;
- private Button restart;
+ private Button open, check, restart;
+ private static final Pattern SNAPSHOT = Pattern.compile(
+     "STATUS P2P=(ACTIVE|IDLE|UNKNOWN) BINDER=(PRESENT|ABSENT|UNKNOWN) RADIO=(UP|DOWN|ABSENT|UNKNOWN)");
  @Override public void onCreate(Bundle saved) {
   super.onCreate(saved);
   boolean dark=(getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK)
@@ -64,67 +68,146 @@ public final class MainActivity extends Activity {
   status.setTextColor(secondary);
   status.setGravity(Gravity.CENTER);
   status.setLineSpacing(dp(3),1f);
-  status.setText("使用前请确保已安装配套模块并在 LSPosed 启用桥接。重启时会检查当前传输状态。\n\n此功能需要 Root 授权。");
+  status.setText("可直接打开 Quick Share，保留当前连接。若苹果设备无法发现手机，可检查直连、服务和无线接口状态。");
   LinearLayout.LayoutParams info=new LinearLayout.LayoutParams(-1,-2);
   info.topMargin=dp(20);
   layout.addView(status,info);
-  restart=new Button(this);
-  restart.setText("重启分享服务");
-  restart.setAllCaps(false);
-  restart.setTextColor(dark?Color.parseColor("#102B58"):Color.WHITE);
-  restart.setBackgroundTintList(ColorStateList.valueOf(accent));
+
+  open=addButton(layout,"打开 Quick Share",28);
+  open.setTextColor(dark?Color.parseColor("#102B58"):Color.WHITE);
+  open.setBackgroundTintList(ColorStateList.valueOf(accent));
+  open.setOnClickListener(v -> openQuickShare());
+  check=addButton(layout,"检查 AirDrop 状态",8);
+  check.setOnClickListener(v -> runModule(false));
+  restart=addButton(layout,"断开直连并恢复 AirDrop",8);
   restart.setOnClickListener(v -> new AlertDialog.Builder(this)
-    .setTitle("重启并恢复 AirDrop")
-    .setMessage("如果其他设备正在使用 Wi-Fi 直连，将断开当前直连（包括平板互联），以便尝试恢复 AirDrop。正在进行的分享不会被主动中断。")
+    .setTitle("断开当前 Wi-Fi 直连？")
+    .setMessage("这可能断开 OPPO 平板互联或其他直连设备。模块会先核验分享传输和服务是否空闲。")
     .setNegativeButton("取消", null)
-    .setPositiveButton("断开直连并重启", (dialog,which) -> restartService()).show());
-  LinearLayout.LayoutParams action=new LinearLayout.LayoutParams(-1,dp(56));
-  action.topMargin=dp(28);
-  layout.addView(restart,action);
+    .setPositiveButton("断开直连并恢复", (dialog,which) -> runModule(true)).show());
   scroll.addView(outer,new ScrollView.LayoutParams(-1,-1));
   setContentView(scroll);
   scroll.requestApplyInsets();
  }
- private int dp(float value) {return (int)(value*getResources().getDisplayMetrics().density+0.5f);}
- private void restartService() {
-  restart.setEnabled(false);
-  status.setText("正在检查服务和传输状态…");
+
+ private int dp(float value) {
+  return (int)(value*getResources().getDisplayMetrics().density+0.5f);
+ }
+
+ private Button addButton(LinearLayout layout,String label,int topMargin) {
+  Button button=new Button(this);
+  button.setText(label);
+  button.setAllCaps(false);
+  LinearLayout.LayoutParams params=new LinearLayout.LayoutParams(-1,dp(56));
+  params.topMargin=dp(topMargin);
+  layout.addView(button,params);
+  return button;
+ }
+
+ private void openQuickShare() {
+  try {
+   startActivity(new Intent().setComponent(new ComponentName("com.google.android.gms",
+       "com.google.android.gms.nearby.sharing.main.MainActivity")));
+  } catch(Exception ignored) {
+   status.setText("无法打开 Quick Share。请从系统分享页面打开。");
+  }
+ }
+
+ private void enableActions(boolean enabled) {
+  open.setEnabled(enabled);
+  check.setEnabled(enabled);
+  restart.setEnabled(enabled);
+ }
+
+ private void runModule(boolean reclaim) {
+  enableActions(false);
+  status.setText(reclaim?"正在检查服务和传输状态…":"正在读取当前状态…");
   new Thread(() -> {
-   String result="ERROR";
-   Process p=null;
+   String response="";
+   boolean succeeded=false;
+   Process process=null;
    try {
-    p=new ProcessBuilder("su","-c","sh /data/adb/modules/gt8pro.mosey.integrated/payload/restart-service.sh reclaim")
-      .redirectErrorStream(true).start();
-    if(p.waitFor(60,TimeUnit.SECONDS)) {
-     InputStream in=p.getInputStream();
-     ByteArrayOutputStream out=new ByteArrayOutputStream();
-     byte[] bytes=new byte[256]; int n; int count=0;
-     while((n=in.read(bytes))!=-1 && count<4096) {out.write(bytes,0,Math.min(n,4096-count));count+=n;}
-     String response=out.toString("UTF-8");
-     if(p.exitValue()==0 && response.contains("RESTART_READY"))result="READY";
-     else if(response.contains("TRANSFER_BUSY"))result="BUSY";
-     else if(response.contains("MODULE_UNAVAILABLE"))result="MODULE";
-     else if(response.contains("SERVICE_ACTIVE"))result="ACTIVE";
-     else if(response.contains("P2P_RELEASE_FAILED"))result="P2P_FAILED";
-    } else {p.destroy();result="TIMEOUT";}
-   } catch(Exception ignored) {if(p!=null)p.destroy();}
-   final String outcome=result;
-   runOnUiThread(() -> {
-    restart.setEnabled(true);
-    switch(outcome) {
-     case "READY":
-      status.setText("恢复检查完成，正在打开 Quick Share。请等待服务启动。");
-      try {startActivity(new Intent().setComponent(new ComponentName("com.google.android.gms","com.google.android.gms.nearby.sharing.main.MainActivity")));}
-      catch(Exception e){status.setText("恢复检查完成，但无法打开 Quick Share。请手动打开分享页面。");}
-      break;
-     case "BUSY":status.setText("检测到传输进行中或状态不明确，请稍后再试。");break;
-     case "ACTIVE":status.setText("服务正在运行。请关闭 Quick Share 页面，等待服务停止后再试。");break;
-     case "P2P_FAILED":status.setText("无法释放 Wi-Fi 直连，平板可能仍处于连接状态。请断开后重试。");break;
-     case "MODULE":status.setText("未找到兼容的整合模块，请检查模块是否启用。");break;
-     case "TIMEOUT":status.setText("操作超时，请检查 Root 授权及服务状态。");break;
-     default:status.setText("恢复未完成，请检查 Root 授权及模块状态。");
+    process=new ProcessBuilder("su","-c",
+        "sh /data/adb/modules/gt8pro.mosey.integrated/payload/restart-service.sh "+
+        (reclaim?"reclaim":"status")).redirectErrorStream(true).start();
+    if(process.waitFor(reclaim?90:18,TimeUnit.SECONDS)) {
+     try(InputStream in=process.getInputStream()) {
+      ByteArrayOutputStream out=new ByteArrayOutputStream();
+      byte[] bytes=new byte[256];
+      while(out.size()<4096) {
+       int n=in.read(bytes,0,Math.min(bytes.length,4096-out.size()));
+       if(n<0)break;
+       out.write(bytes,0,n);
+      }
+      response=out.toString("UTF-8").trim();
+     }
+     succeeded=process.exitValue()==0;
+    } else {
+     response="TIMEOUT";
     }
+   } catch(InterruptedException e) {
+    Thread.currentThread().interrupt();
+   } catch(Exception ignored) {
+    // A denied root request or malformed response cannot confirm any state.
+   } finally {
+    if(process!=null)process.destroy();
+   }
+   final String result=response;
+   final boolean ok=succeeded;
+   runOnUiThread(() -> {
+    if(isFinishing() || isDestroyed())return;
+    enableActions(true);
+    if(reclaim)showRecovery(result,ok);
+    else showSnapshot(result,ok);
    });
-  },"GT8-Restart").start();
+  },"GT8-ModuleAction").start();
+ }
+
+ private void showRecovery(String result,boolean succeeded) {
+  if(succeeded && result.equals("RESTART_READY")) {
+   status.setText("恢复检查通过，正在打开 Quick Share。请在苹果设备上确认能否发现手机。");
+   openQuickShare();
+   return;
+  }
+  switch(result) {
+   case "TRANSFER_BUSY":status.setText("分享传输中或空闲状态无法确认。请稍后再试。");break;
+   case "SERVICE_ACTIVE":status.setText("分享服务尚未退出，或其状态无法确认。请关闭 Quick Share，稍后再试。");break;
+   case "P2P_RELEASE_FAILED":status.setText("无法确认 Wi-Fi 直连已释放。请检查平板连接状态。");break;
+   case "MODULE_UNAVAILABLE":status.setText("无法访问配套模块。请检查模块是否启用及 Root 授权。");break;
+   case "TIMEOUT":status.setText("恢复操作超时。请检查平板连接状态和 Root 授权。");break;
+   default:status.setText("恢复检查未通过。请检查配套模块及 Root 授权。");
+  }
+ }
+
+ private void showSnapshot(String result,boolean succeeded) {
+  Matcher match=SNAPSHOT.matcher(result);
+  if(!succeeded || !match.matches()) {
+   status.setText("无法读取状态。请检查配套模块及 Root 授权。");
+   return;
+  }
+  String p2p=match.group(1), binder=match.group(2), radio=match.group(3);
+  String directLabel=switch(p2p) {
+   case "ACTIVE" -> "有活动直连组";
+   case "IDLE" -> "无活动直连组";
+   default -> "未确认";
+  };
+  String binderLabel=switch(binder) {
+   case "PRESENT" -> "已注册";
+   case "ABSENT" -> "未注册";
+   default -> "未确认";
+  };
+  String radioLabel=switch(radio) {
+   case "UP" -> "已启用";
+   case "DOWN" -> "存在，未启用";
+   case "ABSENT" -> "未出现";
+   default -> "未确认";
+  };
+  String hint="设备是否可见，请在 iPhone 或 Mac 上确认。";
+  if(p2p.equals("ACTIVE") && binder.equals("PRESENT") &&
+      (radio.equals("DOWN") || radio.equals("ABSENT"))) {
+   hint="分享可能在等待 Wi-Fi 直连释放。可保留连接，稍后再检查。";
+  }
+  status.setText("当前设备状态\nWi-Fi 直连："+directLabel+"\n分享服务（Binder）："+binderLabel+
+      "\nAirDrop 无线接口："+radioLabel+"\n\n"+hint);
  }
 }

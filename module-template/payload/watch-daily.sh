@@ -13,7 +13,7 @@ name=${d##*/runtime-integrated-}
 case "$name" in *[!a-f0-9]*|'') exit 1;;esac
 [ "${#name}" = 64 ] && [ "$(readlink -f "$d")" = "$d" ] || exit 1
 [ ! -L "$d" ] && [ "$(stat -c '%u:%a' "$d")" = 0:700 ] || exit 1
-for pair in 'recover-v9.sh:ca63c55950b1a629a5da0dc76b19da719f48f428fbeb6e31c0fd3e4a53fd9ecf' 'watch-lock.sh:eb10d66c10839e5a5cd5dfbe5a1a952ec4f081484223308f26617b1d51ee2199' 'owner-guard.sh:180a2960f5cc0862ccb6329f92c067612248812f01d23c57641e149dac93bf40' 'watch-policy.sh:b1c9ee10fb33cd5550ec3978f64ecb1873437978da03475f9e3bbdbf89eaf8df' 'ui-common.sh:aa5445b5d5370407cbbc2217c75bc19d320fbc515f4a376fc1658fa8589eee46' 'bind-common.sh:e6a75e680b406e4a18f07ef1e9627e2cc02aeb20046ff44a6b996486d8d3ab7f' 'main.sh:1cfbbcd6e0a1959fd91b4a365ffd5770037ccd8de70d04c0612b7cbba2bdec5e' 'transfer-idle.sh:e156907644bfdaecfd9dbc3e5d5df281d5fe3aeea2a65efd39825c55d3e87db2' 'check-helper.sh:409f3c039abfc5c022192f6ac3fca8612a44389af291caccca6f71809d8b6e7c';do
+for pair in 'recover-v9.sh:ca63c55950b1a629a5da0dc76b19da719f48f428fbeb6e31c0fd3e4a53fd9ecf' 'watch-lock.sh:eb10d66c10839e5a5cd5dfbe5a1a952ec4f081484223308f26617b1d51ee2199' 'owner-guard.sh:180a2960f5cc0862ccb6329f92c067612248812f01d23c57641e149dac93bf40' 'watch-policy.sh:b1c9ee10fb33cd5550ec3978f64ecb1873437978da03475f9e3bbdbf89eaf8df' 'ui-common.sh:aa5445b5d5370407cbbc2217c75bc19d320fbc515f4a376fc1658fa8589eee46' 'bind-common.sh:e6a75e680b406e4a18f07ef1e9627e2cc02aeb20046ff44a6b996486d8d3ab7f' 'main.sh:aa0babc38f726fbd7a7ab51ecd0cfa2f84f69ed234cb1f826df5de0bc40c261c' 'transfer-idle.sh:e156907644bfdaecfd9dbc3e5d5df281d5fe3aeea2a65efd39825c55d3e87db2' 'check-helper.sh:7012326726f5cf6bd7c2fa77410e25a8ad040ca080663c09b10555eb96197be7';do
  f=${pair%%:*};expected=${pair#*:}
  [ ! -L "$d/$f" ] && [ "$(stat -c '%u:%a' "$d/$f")" = 0:600 ] && [ "$(sha256sum "$d/$f" | cut -d ' ' -f1)" = "$expected" ] || exit 1
 done
@@ -89,12 +89,78 @@ gt8_prepare_idle_boot_process(){
  [ -z "$(gt8_mosey_main_pids)" ] || return 1
  echo WATCH_IDLE_BOOT_PROCESS=STOPPED
 }
+
+# An event is a wake-up hint only, never proof that a share is foreground.
+gt8_quick_share_event() {
+ case "$1" in
+  *' wm_set_resumed_activity: [0,com.google.android.gms/.nearby.sharing.main.MainActivity,'*|\
+  *' wm_set_resumed_activity: [0,com.google.android.gms/.nearby.sharing.receive.ReceiveActivity,'*|\
+  *' wm_set_resumed_activity: [0,com.google.android.gms/com.google.android.gms.nearby.sharing.main.MainActivity,'*|\
+  *' wm_set_resumed_activity: [0,com.google.android.gms/com.google.android.gms.nearby.sharing.receive.ReceiveActivity,'*) return 0;;
+  *) return 1;;
+ esac
+}
+
+wake_pid=
+wake_token=
+wake_open=false
+gt8_stop_wake_stream() {
+ if [ "$wake_open" = true ];then
+  exec 7>&-
+  wake_open=false
+ fi
+ if [ -n "$wake_pid" ] && gt8_owner_alive "$wake_pid" "$wake_token" /proc;then
+  kill -TERM "$wake_pid" 2>/dev/null || :
+ fi
+ wake_pid=
+ wake_token=
+}
+
+gt8_start_wake_stream() {
+ local tmp pipe
+ if [ "$wake_open" = true ] && gt8_owner_alive "$wake_pid" "$wake_token" /proc;then return 0;fi
+ gt8_stop_wake_stream
+ tmp=$(mktemp -d "$root/.watch-wake.XXXXXX") || return 1
+ pipe=$tmp/events
+ if ! mkfifo "$pipe";then rmdir "$tmp";return 1;fi
+ if ! exec 7<>"$pipe";then rm -f "$pipe";rmdir "$tmp";return 1;fi
+ wake_open=true
+ if ! exec 6>"$pipe";then gt8_stop_wake_stream;rm -f "$pipe";rmdir "$tmp";return 1;fi
+ # Keep the writer on a write-only FD. Both endpoints survive unlink, so
+ # event text is never stored on disk and an exited reader can close the pipe.
+ rm -f "$pipe" && rmdir "$tmp" || { exec 6>&-;gt8_stop_wake_stream;return 1; }
+ timeout -k 1 60 logcat -b events -v epoch -T 1 -s wm_set_resumed_activity:I >&6 7>&- 6>&- 2>/dev/null &
+ wake_pid=$!
+ exec 6>&-
+ wake_token=$(awk 'NR==1{sub(/^.*[)] /,"");print $20}' "/proc/$wake_pid/stat" 2>/dev/null)
+ if ! gt8_owner_alive "$wake_pid" "$wake_token" /proc;then gt8_stop_wake_stream;return 1;fi
+}
+
+gt8_wait_foreground_hint() {
+ local start budget line seen
+ if ! gt8_start_wake_stream;then sleep 2;return;fi
+ start=$(awk 'NR==1{print $1}' /proc/uptime)
+ case "$start" in ''|*[!0-9.]* ) sleep 2;return;; esac
+ seen=0
+ while :;do
+  budget=$(awk -v start="$start" 'NR==1 && $1 < start+2 {printf "%.3f",start+2-$1}' /proc/uptime)
+  [ -n "$budget" ] || break
+  if [ "$seen" -ge 24 ];then sleep "$budget";break;fi
+  IFS= read -r -t "$budget" line <&7 || break
+  seen=$((seen+1))
+  if gt8_quick_share_event "$line";then
+   echo WATCH_WAKE=QUICK_SHARE
+   return
+  fi
+ done
+}
+
 GT8_WATCHER_PID=$$
 GT8_WATCHER_TOKEN=$(awk 'NR==1{sub(/^.*[)] /,"");print $20}' "/proc/$$/stat")
 export GT8_WATCHER_PID GT8_WATCHER_TOKEN
 gt8_owner_alive "$GT8_WATCHER_PID" "$GT8_WATCHER_TOKEN" /proc || exit 1
 gt8_watch_lock_acquire "$root" "$GT8_WATCHER_PID" "$GT8_WATCHER_TOKEN" || { echo WATCHER=ALREADY_RUNNING_OR_STALE;exit 1; }
-trap 'gt8_watch_lock_release "$root" "$GT8_WATCHER_PID" "$GT8_WATCHER_TOKEN" || :' 0
+trap 'gt8_stop_wake_stream; gt8_watch_lock_release "$root" "$GT8_WATCHER_PID" "$GT8_WATCHER_TOKEN" || :' 0
 trap 'exit 1' 1 2 15
 phase=ARMED;count=0
 while :;do
@@ -130,7 +196,13 @@ while :;do
     grep -qx 'APP_SERVICE_STOPPED=PASS' "$run_dir/binding-report.txt" || exit "$rc"
     gt8_watch_quiescent || exit "$rc"
     case "$(cat "$run_dir/ui-stop-reason.txt")" in
-     UI_CLOSED) echo WATCH_SESSION_END=UI_CLOSED_AND_CLEAN;;
+     UI_CLOSED)
+      echo WATCH_SESSION_END=UI_CLOSED_AND_CLEAN
+      # Quiescence and cleanup above already verified the close. Rearm now
+      # so a page opened during the next poll is treated as a new session.
+      phase=ARMED;count=0
+      echo WATCH_REARM=READY
+      ;;
      MODULE_DISABLED) echo WATCH_SESSION_END=MODULE_DISABLED_AND_CLEAN;;
     esac
    fi
@@ -142,5 +214,11 @@ while :;do
   WAIT) ;;
   *) exit 1;;
  esac
- sleep 2
+ # Keep the idle and close cadence. Only a first confirmed foreground sample
+ # earns a quick second observation; admission still takes a third fresh view.
+ case "$phase:$count" in
+  ARMED:0) gt8_wait_foreground_hint ;;
+  ARMED:1) sleep 0.35 ;;
+  *) sleep 2 ;;
+ esac
 done
