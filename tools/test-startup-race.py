@@ -61,6 +61,9 @@ finish = watch.index('\n}\n', begin)+3
 event_matcher = watch[begin:finish]
 events = [
     ('wm_set_resumed_activity: [0,com.google.android.gms/.nearby.sharing.main.MainActivity,reason]', True),
+    ('wm_set_resumed_activity: [0,com.google.android.gms/.nearby.sharing.main.SettingsMainActivity,reason]', True),
+    ('wm_set_resumed_activity: [0,com.google.android.gms/com.google.android.gms.nearby.sharing.main.SettingsMainActivity,reason]', True),
+    ('wm_set_resumed_activity: [999,com.google.android.gms/.nearby.sharing.main.SettingsMainActivity,reason]', False),
     ('wm_set_resumed_activity: [0,com.google.android.gms/com.google.android.gms.nearby.sharing.receive.ReceiveActivity,reason]', True),
     ('wm_set_resumed_activity: [999,com.google.android.gms/.nearby.sharing.main.MainActivity,reason]', False),
     ('wm_set_resumed_activity: [0,unrelated/.nearby.sharing.main.MainActivity,reason]', False),

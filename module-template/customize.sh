@@ -5,7 +5,7 @@ REPLACE=""
 REMOVE=""
 export SKIPUNZIP REPLACE REMOVE
 [ "$BOOTMODE" = true ] && [ "$KSU" = true ] || abort '! 请在 KernelSU/SukiSU 中安装，不支持 recovery 安装。'
-[ -f "$MODPATH/install.sha256" ] && [ "$(sha256sum "$MODPATH/install.sha256" | cut -d ' ' -f1)" = fba0eacb32fa81aeb29877f48fc881cb55088e60658b9bc7db5538ae3a9bf506 ] || abort '! 安装清单不匹配。'
+[ -f "$MODPATH/install.sha256" ] && [ "$(sha256sum "$MODPATH/install.sha256" | cut -d ' ' -f1)" = 3fcb1ae0a4cc003f517adbdee9f496ff8844a5aaa6b9cf966982d654ca94ae96 ] || abort '! 安装清单不匹配。'
 (cd "$MODPATH" && sha256sum -c install.sha256 >/dev/null) || abort '! 安装文件校验失败。'
 MODDIR=$MODPATH/base-service
 . "$MODDIR/common.sh"

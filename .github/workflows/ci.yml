@@ -32,5 +32,6 @@ jobs:
           python3 tools/test-runtime-upgrade.py
           python3 tools/test-helper-cache-upgrade.py
           python3 tools/test-supervisor-retry.py
+          python3 tools/test-ui-displays.py
       - name: Shell syntax
         run: find module-template -name '*.sh' -print0 | xargs -0 -n 1 sh -n
