@@ -7,7 +7,7 @@ umask 077
 set -f
 module=/data/adb/modules/gt8pro.mosey.integrated
 root=/data/adb/gt8pro-mosey-daily
-manifest_digest=68dfc11413d623dc51e8dad85e7458008ffeb636572c49a38ffc2b63c4a99966
+manifest_digest=c8bf6b4e2360ac74d428aa60893b50ccd04988f8f9f1729edc4e62c50fb77d36
 d=$root/runtime-integrated-$manifest_digest
 GT8_RUNTIME_DIR=$d
 export GT8_RUNTIME_DIR
@@ -15,7 +15,7 @@ export GT8_RUNTIME_DIR
 [ "$(getprop ro.product.model)" = RMX5200 ] && [ "$(getprop ro.build.display.id)" = 'RMX5200_16.0.10.501(CN01)' ] || exit 1
 [ ! -L "$module" ] && [ -d "$module" ] && [ ! -L "$module/payload" ] && [ -d "$module/payload" ] || exit 1
 for flag in disable remove update;do [ ! -e "$module/$flag" ] && [ ! -L "$module/$flag" ] || exit 0;done
-[ ! -L "$module/payload.sha256" ] && [ "$(sha256sum "$module/payload.sha256" | cut -d ' ' -f1)" = 68dfc11413d623dc51e8dad85e7458008ffeb636572c49a38ffc2b63c4a99966 ] || exit 1
+[ ! -L "$module/payload.sha256" ] && [ "$(sha256sum "$module/payload.sha256" | cut -d ' ' -f1)" = c8bf6b4e2360ac74d428aa60893b50ccd04988f8f9f1729edc4e62c50fb77d36 ] || exit 1
 [ ! -L "$root" ] || exit 1
 mkdir -m 0700 -p "$root" || exit 1
 [ "$(stat -c '%u:%a' "$root")" = 0:700 ] && [ "$(readlink -f "$root")" = "$root" ] || exit 1

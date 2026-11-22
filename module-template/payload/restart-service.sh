@@ -135,7 +135,7 @@ case "$sum" in *[!a-f0-9]*|'') exit 1;; esac
 [ "${#sum}" = 64 ] || exit 1
 d=/data/adb/gt8pro-mosey-daily/runtime-integrated-$sum
 [ ! -L "$d" ] && [ "$(stat -c '%u:%a' "$d")" = 0:700 ] && [ "$(readlink -f "$d")" = "$d" ] || { echo MODULE_UNAVAILABLE; exit 1; }
-for pair in 'transfer-idle.sh:e156907644bfdaecfd9dbc3e5d5df281d5fe3aeea2a65efd39825c55d3e87db2' \
+for pair in 'transfer-idle.sh:6b1d8880d703c2399d1a2d48d2c69d94c5f9f4e84ec8a2799cedf796d8b4f1c2' \
             'bind-common.sh:e6a75e680b406e4a18f07ef1e9627e2cc02aeb20046ff44a6b996486d8d3ab7f' \
             'recover-v9.sh:ca63c55950b1a629a5da0dc76b19da719f48f428fbeb6e31c0fd3e4a53fd9ecf'; do
     f=$d/${pair%%:*}
