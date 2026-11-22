@@ -1,4 +1,4 @@
-> 当前源码为 0.16.1 / 0.12.5 实验候选；自编译产物尚未经过实机验证。
+> 当前源码为 0.16.2 / 0.12.5 实验候选。自编译产物尚未经过实机验证。
 
 # 构建与输入边界
 
@@ -10,7 +10,7 @@
 python3 build.py
 ```
 
-输出为 `dist/GT8Pro-QuickShare-0.16.1.zip`。也可用 `python3 build.py --input /path/to/local-files` 指定本地目录、ZIP 或单个文件；`--input` 可重复，`--output` 可更改输出路径。脚本不会下载或上传本地输入。
+输出为 `dist/GT8Pro-QuickShare-0.16.2.zip`。也可用 `python3 build.py --input /path/to/local-files` 指定本地目录、ZIP 或单个文件；`--input` 可重复，`--output` 可更改输出路径。脚本不会下载或上传本地输入。
 
 仓库的 `releases/GT8Pro-project-helpers-0.13.9.zip` 提供本项目五个固定版本辅助程序，源码分别位于 `helpers/`、`native/` 和 `module-template/base-service/source/`；它们不再要求从旧整合 ZIP 获取。`external-inputs.json` 仍对所有输入按长度与 SHA-256 匹配，并验证安装清单的完整校验链；缺项会列出后退出。
 
@@ -20,7 +20,7 @@ python3 build.py
 
 仓库现包含三个上游原生组件的源码及来源说明（见 `native/UPSTREAM.md`），可以连同本项目的辅助程序和桥 APK 一起编译，并自动更新相应的哈希与清单。原厂文件仍须自行合法取得，脚本会按 `external-inputs.json` 的长度和哈希校验，既不下载也不上传文件。
 
-需要 Python 3、JDK 17、Android NDK clang 和桥构建脚本要求的本地 Android SDK 工具包。`--tools` 指向含 `sdk/` 和桥构建所需工具归档的目录；具体要求和固定哈希见 `bridge/build.py`。例如：
+需要 Python 3、JDK 17、Android NDK clang 和桥构建脚本要求的本地 Android SDK 工具包。`--tools` 指向包含 `platform-36_r02.zip`、`build-tools_r36_macosx.zip` 和 `api-82.jar` 的目录。构建会校验这些输入，并从已校验的归档提取工具到临时目录。固定哈希见 `bridge/sdk_tools.py`。例如：
 
 ```sh
 python3 build-from-source.py \
@@ -59,11 +59,13 @@ python3 bridge/test-route.py
 python3 bridge/test-reasons.py
 python3 bridge/test-metadata.py
 python3 bridge/test-callback.py
+python3 bridge/test-sdk-tools.py
 python3 tools/test-transfer-idle.py
 python3 tools/test-supervisor-retry.py
 python3 tools/test-boot-recovery.py
 python3 tools/test-first-run.py
 python3 tools/test-runtime-upgrade.py
+python3 tools/test-helper-cache-upgrade.py
 python3 bridge/test-lifetime.py
 ```
 

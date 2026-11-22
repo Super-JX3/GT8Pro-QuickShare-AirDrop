@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """Build one bounded GMS flag and real-Binder compatibility LSPosed APK. Never connects to a phone."""
 from pathlib import Path
-import argparse, hashlib, json, os, secrets, subprocess, zipfile, shutil
+import argparse, hashlib, json, os, secrets, subprocess, tempfile, zipfile, shutil
+
+from sdk_tools import ARCHIVE_SHA1, extract_verified_sdk
 
 ROOT=Path(__file__).resolve().parent
 def sha(p):return hashlib.sha256(p.read_bytes()).hexdigest()
@@ -11,12 +13,16 @@ def main():
  p.add_argument('--jdk',type=Path,required=True)
  p.add_argument('--out',type=Path,required=True)
  p.add_argument('--signing',type=Path,required=True)
- a=p.parse_args();tools=a.tools.resolve();jdk=a.jdk.resolve();out=a.out.resolve()
- sdk=tools/'sdk';android=sdk/'android-36/android.jar';bt=sdk/'android-16';api=tools/'api-82.jar'
- assert sha(api)=='f48c635f1c7469fdec0e00ad2ea0b7a6b2f5b55065784a35b7ca3a84615e8e25'
- expected={'platform-36_r02.zip':'2c1a80dd4d9f7d0e6dd336ec603d9b5c55a6f576','build-tools_r36_macosx.zip':'199ae0047ee61e842f8ee0c6d3918e44fb9a1f83'}
- for n,h in expected.items():assert hashlib.sha1((tools/n).read_bytes()).hexdigest()==h
- for f in [android,bt/'aapt2',bt/'zipalign',bt/'lib/d8.jar',bt/'lib/apksigner.jar',jdk/'javac',jdk/'java',jdk/'keytool']:assert f.is_file(),f
+ a=p.parse_args()
+ with tempfile.TemporaryDirectory(prefix='gt8-bridge-sdk-') as temp:
+  sdk=extract_verified_sdk(a.tools.resolve(),Path(temp)/'sdk')
+  build_bridge(sdk,a.jdk.resolve(),a.out.resolve(),a.signing.resolve())
+
+
+def build_bridge(sdk,jdk,out,signing):
+ android=sdk/'android-36/android.jar';bt=sdk/'android-16';api=sdk/'api-82.jar'
+ for f in (jdk/'javac',jdk/'java',jdk/'keytool'):
+  if not f.is_file():raise SystemExit('Missing JDK tool: '+str(f))
  out.mkdir(parents=True,exist_ok=True)
  build=ROOT/'build';build.mkdir(exist_ok=True)
  logs=build/'build-log.txt'
@@ -27,7 +33,7 @@ def main():
   return r.stdout+r.stderr
  # A local signing identity is created only when both files are absent. Never
  # replace an existing identity: Android upgrades require the same signer.
- signing=a.signing.resolve();signing.mkdir(mode=0o700,parents=True,exist_ok=True)
+ signing.mkdir(mode=0o700,parents=True,exist_ok=True)
  pw=signing/'password.txt';ks=signing/'gt8-local.p12'
  if pw.is_symlink() or ks.is_symlink():raise SystemExit('Signing files must not be symlinks')
  if pw.exists()!=ks.exists():raise SystemExit('Incomplete signing identity; preserve and restore both files')
@@ -104,7 +110,7 @@ def main():
    'explicitRadioTriggers':False,'explicitFileTransfer':True,'syntheticSystemShareEntry':True,'syntheticProviderPrivate':True,'syntheticFixtureReadGrantToMosey':True,'syntheticFixtureGrantExplicitRevoke':True,'syntheticFixtureRootControlOnly':True,'syntheticFixtureGrantEffectiveUidCheck':'PACKAGE_MANAGER_USER_0','syntheticFixtureQueryPackage':'com.google.android.mosey','syntheticFixtureReadContextObservation':True,'syntheticShareFixtureStorage':'APP_OWNED_MEDIASTORE_DOWNLOADS','syntheticMediaFixtureBytes':8192,'syntheticFixtureRevokeAllReadGrants':True,'receiveRequestObservation':True,'receiveTransportObservation':True,'gmsMayNaturallyInitializeWireless':True,'networkPermissionGap':'NETWORK_FACTORY_GRANTED_FUTURE_DEFINITIONS_ABSENT',
    'gmsBaseSha256':'8395c70a5e4ffbe2712aea7e1045d700b282f0a67d19b80686c595c991f12112',
    'moseyBaseSha256':'7ab2deaea6c9c2bdd5ba0f935d6143c115f5ceb11cb8b63066496ad27a28da49',
-   'toolchain':{'platformArchiveSha1':expected['platform-36_r02.zip'],'buildToolsArchiveSha1':expected['build-tools_r36_macosx.zip'],'xposedApiSha256':sha(api)},'files':rows,'sources':{str(f.relative_to(ROOT)):sha(f) for f in sorted((ROOT/'src').rglob('*.java'))}}
+   'toolchain':{'platformArchiveSha1':ARCHIVE_SHA1['platform-36_r02.zip'],'buildToolsArchiveSha1':ARCHIVE_SHA1['build-tools_r36_macosx.zip'],'xposedApiSha256':sha(api)},'files':rows,'sources':{str(f.relative_to(ROOT)):sha(f) for f in sorted((ROOT/'src').rglob('*.java'))}}
  (out/'GT8Pro-MoseyBridge-0.12.5-Provenance.json').write_text(json.dumps(receipt,ensure_ascii=False,indent=2)+'\n')
  print('BUILD_COMPLETE; no phone operations performed')
 if __name__=='__main__':main()

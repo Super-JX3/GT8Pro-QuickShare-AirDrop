@@ -1,8 +1,12 @@
 from pathlib import Path
-import hashlib,json,struct,subprocess,zipfile,sys
+import hashlib,json,os,struct,subprocess,tempfile,zipfile,sys
+from sdk_tools import extract_verified_sdk
 root=Path(__file__).resolve().parent
 out=Path(sys.argv[1]).resolve()
 receipt=json.loads((out/'GT8Pro-MoseyBridge-0.11.6-Provenance.json').read_text())
+sdk_temp=tempfile.TemporaryDirectory(prefix='gt8-verify-sdk-')
+sdk=extract_verified_sdk(Path(os.environ['GT8_ANDROID_TOOLS']),Path(sdk_temp.name)/'sdk')
+aapt=sdk/'android-16/aapt2'
 checks=0
 for item in receipt['files']:
  p=out/item['file'];assert hashlib.sha256(p.read_bytes()).hexdigest()==item['sha256'];checks+=1
@@ -50,7 +54,6 @@ for item in receipt['files']:
   assert actual=={'BINDER':item['nativeLookupAdapter'],'GMS':item['gmsFalseToTrue'],'MODE':item['mode'],'ROUTE':True},actual
   checks+=1
   print('APK_VERIFIED',item['mode'],'classes='+str(len(classes)),'flags='+str(actual))
- aapt=Path(__import__('os').environ['GT8_ANDROID_TOOLS'])/'sdk/android-16/aapt2'
  badging=subprocess.run([str(aapt),'dump','badging',str(p)],capture_output=True,text=True,check=True).stdout
  assert "package: name='local.gt8pro.moseybridge'" in badging
  assert "versionCode='"+str(receipt['versionCode'])+"'" in badging
@@ -82,5 +85,6 @@ for item in receipt['files']:
 assert len(set(x['sha256'] for x in receipt['files']))==1
 assert all(x['deviceTested'] is False for x in receipt['files'])
 checks+=2
+sdk_temp.cleanup()
 print('APK_STRUCTURE_CHECKS_PASS='+str(checks))
 print('APK_TARGET_CLASSES_EXECUTED=false')

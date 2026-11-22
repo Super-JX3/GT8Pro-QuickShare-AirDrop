@@ -6,11 +6,17 @@
 
 > **已知兼容性问题（0.13.7 / 0.11.6）：** 该旧版本在多处将 Mosey 应用 UID 固定为测试机的 `10366`。即使是相同机型和固件，其他设备的 UID 也可能不同，导致服务无法启动、代理及异常恢复失败。请勿把该旧候选视为支持所有同型号设备；0.13.8 候选已改为动态查询 UID，并在原测试机启动及完成一次 iPhone→Android 文件接收；不同 UID 的真实设备仍未验证。
 
-## 0.16.1 传输结束后无法重新发现
+## 0.16.2 修复升级后监听器无法启动
+
+升级后从当前运行目录读取已校验的辅助 JAR。旧版缓存或中断复制留下的残缺缓存都不会拦住启动。主机回归覆盖首次启动、开机恢复、传输状态和运行目录升级。从源码构建时，桥 APK 和整包使用从已校验的 SDK 归档解出的工具。
+
+已在 GT8 Pro 上用同一份残缺缓存验证旧版检查失败、新版重启后监听器启动。iPhone 发来的图片可以收到并打开。直接进入新版 Quick Share 发送页（`SettingsMainActivity`）仍可能搜不到 iPhone。先打开接收页启动服务，再切到发送页，实测 iPhone 收到测试文字。平板互联或 OPPO 互传与 AirDrop 的同时使用仍未通过验证。
+
+使用 [v0.16.2-rc 实验版](https://github.com/Super-JX3/GT8Pro-QuickShare-AirDrop/releases/tag/v0.16.2-rc) 的模块 ZIP 和 0.12.5 桥 APK。已经安装匹配的 0.12.5 桥时，只需更新模块。详见[安装与回滚说明](docs/INSTALL.md)。
+
+## 0.16.1 修复传输结束后无法重新发现
 
 识别 Google Play 服务记录中的 `REMOTE_CANCELLED`（对端取消）。0.16.0 会把这个终态判为不明确，导致监听器留在 `WATCH_RETRY=BLOCKED`。修复后，相同的实机状态可以通过空闲检查。传输进行中、正在连接以及无法确认的记录仍会拦截恢复。
-
-使用 [v0.16.1-rc 实验版](https://github.com/Super-JX3/GT8Pro-QuickShare-AirDrop/releases/tag/v0.16.1-rc) 的模块 ZIP 和 0.12.5 桥 APK。已经安装匹配的 0.12.5 桥时，只需更新模块。平板互联或 OPPO 互传与 AirDrop 的同时使用仍未通过验证。
 
 ## 0.16.0 AirDrop 能力报告候选
 
@@ -91,7 +97,7 @@ Live Photo 的动态部分和 Android 相册显示兼容性尚未完成验证。
 
 旧版 [0.14.1-rc Release](https://github.com/Super-JX3/GT8Pro-QuickShare-AirDrop/releases/tag/v0.14.1-rc) 提供当时的整合模块 ZIP 和 0.11.9 桥 APK。整合 ZIP 包含 Google 和厂商组件；项目代码的开源许可不覆盖这些外部组件。
 
-也可使用 `python3 build.py --input /path/to/local-verified-inputs` 在本地组装固定版本。当前未发布的源码还提供实验性自编译入口，可生成项目组件并更新校验链；原厂文件仍需自行合法取得，自编译产物尚未经过实机验证，详见 [构建说明](docs/BUILD.md)。请勿提交签名密钥或个人测试日志。
+也可使用 `python3 build.py --input /path/to/local-verified-inputs` 在本地组装固定版本。源码还提供实验性自编译入口，可生成项目组件并更新校验链。原厂文件仍需自行合法取得，自编译产物尚未经过实机验证。详见[构建说明](docs/BUILD.md)。请勿提交签名密钥或个人测试日志。
 
 安装步骤、验证、回滚和已知限制见 [安装与使用](docs/INSTALL.md)。模块 ZIP 是管理器安装包，**不是整机刷机包**。
 

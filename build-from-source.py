@@ -15,6 +15,8 @@ import tempfile
 import zipfile
 from pathlib import Path, PurePosixPath
 
+from bridge.sdk_tools import extract_verified_sdk
+
 ROOT = Path(__file__).resolve().parent
 NOTICE = b'# Modified for the GT8 Pro adaptation; removed verbatim during assembly.\n'
 C_NOTICE = b'/* Modified for the GT8 Pro adaptation; removed verbatim during assembly. */\n'
@@ -110,9 +112,10 @@ def main():
         temp = Path(td); stage = temp/'module'; built = temp/'built'; apkdir = temp/'bridge'
         subprocess.run([sys.executable, str(ROOT/'bridge/build.py'), '--tools', str(args.tools),
                         '--jdk', str(args.jdk_bin), '--out', str(apkdir), '--signing', str(args.signing)], check=True)
+        sdk = extract_verified_sdk(args.tools, temp/'sdk')
         subprocess.run([sys.executable, str(ROOT/'tools/build-helpers.py'),
-                        '--android-jar', str(args.tools/'sdk/android-36/android.jar'),
-                        '--d8-jar', str(args.tools/'sdk/android-16/lib/d8.jar'), '--ndk-clang', str(args.ndk_clang),
+                        '--android-jar', str(sdk/'android-36/android.jar'),
+                        '--d8-jar', str(sdk/'android-16/lib/d8.jar'), '--ndk-clang', str(args.ndk_clang),
                         '--jdk-bin', str(args.jdk_bin), '--output', str(built)], check=True)
         subprocess.run([sys.executable, str(ROOT/'tools/build-upstream-native.py'),
                         '--clang', str(args.ndk_clang), '--output', str(built)], check=True)
