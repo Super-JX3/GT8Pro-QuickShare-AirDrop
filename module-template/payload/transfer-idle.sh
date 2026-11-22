@@ -13,7 +13,7 @@ set -f
 ) 2>&1 | awk '
 # Recognize only complete, paired table rows; do not output values or identifiers.
 function trim(x){gsub(/^[[:space:]]+|[[:space:]]+$/,"",x);return x}
-function terminal(x){return x=="COMPLETE"||x=="MEDIA_UNAVAILABLE"||x=="FAILED"||x=="REJECTED"||x=="CANCELLED"||x=="CANCELED"||x=="TIMED_OUT"||x=="TIMEDOUT"}
+function terminal(x){return x=="COMPLETE"||x=="MEDIA_UNAVAILABLE"||x=="FAILED"||x=="REJECTED"||x=="CANCELLED"||x=="CANCELED"||x=="REMOTE_CANCELLED"||x=="TIMED_OUT"||x=="TIMEDOUT"}
 /^SERVICE / {heads++;if($2!="com.google.android.gms/.chimera.PersistentApiServiceNoInstantApps"||$NF!="user=0")bad=1;next}
 /^__IDLE_RC=/ {marks++;if($0!="__IDLE_RC=0")bad=1;next}
 /Permission Denial|Exception dumping|Error dumping|RemoteException|Dump was interrupted/ {bad=1}
