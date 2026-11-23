@@ -50,6 +50,16 @@ python3 tools/build-helpers.py --android-jar /path/to/android-36/android.jar --d
 
 仓库提供的桥 APK 为候选构建；自编译 APK 的哈希由源码构建入口写入校验链。不同签名不可直接覆盖现有 APK。
 
+构建结束后，用本次生成的 `*-Provenance.json` 校验同目录的桥 APK。例如，若构建时指定了 `--out dist/bridge`，可执行下列命令。
+
+```sh
+python3 bridge/verify-apks.py \
+  --manifest dist/bridge/GT8Pro-MoseyBridge-0.12.5-Provenance.json \
+  --tools /path/to/verified-android-tools
+```
+
+验证器按指定清单中的文件名、SHA-256、版本、版本代码和构建模式核对 APK，并检查 ZIP、DEX 和 Android 清单结构。也可用 `GT8_ANDROID_TOOLS` 指定工具包目录。构建脚本在输出 APK 时通过 `apksigner` 校验签名。
+
 主机测试示例：
 
 ```sh
@@ -66,6 +76,8 @@ python3 tools/test-boot-recovery.py
 python3 tools/test-first-run.py
 python3 tools/test-runtime-upgrade.py
 python3 tools/test-helper-cache-upgrade.py
+python3 tools/test-startup-race.py
+python3 tools/test-ui-displays.py
 python3 bridge/test-lifetime.py
 ```
 

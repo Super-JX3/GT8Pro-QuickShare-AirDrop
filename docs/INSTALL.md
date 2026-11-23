@@ -32,6 +32,13 @@
 
 测试发往 iPhone 时，先选好要分享的内容，再从系统分享菜单进入 Google Quick Share。0.16.3 可以在该发送页有活动的前台发送时启动 AirDrop，普通设置页保持待命。退出 Quick Share 后，服务会回收。
 
+### 大文件发送与关页后再次发送（待维护者验证）
+
+1. 选一个无敏感内容的大文件，记录源文件的字节数和 SHA-256。从系统分享菜单进入新版 Google Quick Share 发送页，在列表中选择 iPhone 并完成发送。
+2. 确认 iPhone 收到的文件可正常打开，字节数和 SHA-256 与源文件一致。需要时可将接收文件复制到电脑上校验。
+3. 退出 Quick Share 分享页。保持手机和模块正常运行，不重启手机或分享服务。再次从系统分享菜单进入发送页，确认能发现同一台 iPhone 并成功再发一个测试文件。
+4. 结束分享并等服务回收，单独打开 Quick Share 普通设置页。用桥 APK 的「检查 AirDrop 状态」查看原生服务是否仍未注册，确认普通设置页不会触发启动。
+
 ## 回滚
 
 上一版是 [v0.16.2-rc](https://github.com/Super-JX3/GT8Pro-QuickShare-AirDrop/releases/tag/v0.16.2-rc)。也可从 [v0.16.1-rc](https://github.com/Super-JX3/GT8Pro-QuickShare-AirDrop/releases/tag/v0.16.1-rc) 或 [v0.15.2-rc](https://github.com/Super-JX3/GT8Pro-QuickShare-AirDrop/releases/tag/v0.15.2-rc) 下载历史版本。请使用同一个 Release 中的整合模块和桥 APK。
