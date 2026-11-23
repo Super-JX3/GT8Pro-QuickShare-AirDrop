@@ -1,4 +1,4 @@
-> 0.16.3 模块搭配 0.12.5 桥 APK。已安装匹配的桥时，只需更新模块。
+> 0.16.4 模块搭配 0.12.5 桥 APK。已安装匹配的桥时，只需更新模块。
 
 > 0.13.8 动态 UID 实验候选已在原测试设备验证启动及一次 iPhone 接收；其他设备及长期稳定性尚未验证。仍需处理 24 小时桥接到期、历史会话目录累积、升级迁移和从源码重建。
 
@@ -10,14 +10,14 @@
 
 确认设备、固件、内核和应用版本与 README 一致；备份可用模块和重要数据，确保具备可用的 KernelSU/SukiSU 与 LSPosed。安装涉及系统应用挂载、SELinux 策略及前台代理，异常可能导致分享功能不可用或需要重启。旧模块保持备份，便于恢复。
 
-从 [v0.16.3-rc 实验版](https://github.com/Super-JX3/GT8Pro-QuickShare-AirDrop/releases/tag/v0.16.3-rc) 取得模块 ZIP、0.12.5 桥 APK 和 SHA-256 清单。也可按[构建说明](BUILD.md)使用本地输入组装。模块 ZIP 包含外部原厂组件。
+从 [v0.16.4-rc 实验版](https://github.com/Super-JX3/GT8Pro-QuickShare-AirDrop/releases/tag/v0.16.4-rc) 取得模块 ZIP、0.12.5 桥 APK 和 SHA-256 清单。也可按[构建说明](BUILD.md)使用本地输入组装。模块 ZIP 包含外部原厂组件。
 
 ## 安装
 
 1. 从主用户安装对应的 0.12.5 桥 APK。如果已有其他签名的同包名应用，Android 会拒绝覆盖；先检查签名和备份，勿直接清除数据。
 2. 在 LSPosed 启用 `local.gt8pro.moseybridge`，仅选择主用户的 `com.google.android.gms` 和 `com.google.android.mosey` 两个作用域。
 3. 如已使用旧的 `gt8pro.mosey.servicetest`、`gt8pro.mosey.appstage`、`gt8pro.mosey.daily`，在管理器中禁用它们并保留备份。确保没有正在进行的分享。
-4. 在 KernelSU/SukiSU 管理器安装与桥 APK 配对的 0.16.3 模块 ZIP。模块 ID 为 `gt8pro.mosey.integrated`，不是刷机包，不要使用系统刷机工具。
+4. 在 KernelSU/SukiSU 管理器安装与桥 APK 配对的 0.16.4 模块 ZIP。模块 ID 为 `gt8pro.mosey.integrated`，不是刷机包，不要使用系统刷机工具。
 5. 正常重启并首次解锁手机；确认管理器中模块已启用、LSPosed 作用域仍正确。
 
 0.13.7 / 0.11.6 是公开版重建候选，已在指定测试机通过一次重启启动与 iPhone→Android 接收；反向、并发和长期稳定性仍未重新验收。在不同设备上操作前请等待对应验证。安装器和运行脚本会针对固定机型、固件、文件哈希及权限进行检查。
@@ -30,10 +30,12 @@
 
 若发现不到设备，先确认 Quick Share 位于前台、iPhone 已解锁且 AirDrop 为“所有人，10 分钟”，然后关闭并重新打开分享页。故障持续时保留模块状态和时间，收集前检查日志是否含设备名、地址或文件名。
 
-测试发往 iPhone 时，先选好要分享的内容，再从系统分享菜单进入 Google Quick Share。0.16.3 可以在该发送页有活动的前台发送时启动 AirDrop，普通设置页保持待命。退出 Quick Share 后，服务会回收。
+测试发往 Apple 设备时，先选好内容，再从系统分享菜单进入 Google Quick Share。发送页有活动的前台发送时可以启动 AirDrop，普通设置页保持待命。完成传输并退出 Quick Share 后，等服务自动回收，再重开发送页验证能否再次发现并发送。
+
+0.16.4 已在指定 GT8 Pro 上通过两次向同一台 Mac 发送约 96 MiB ZIP 的实测。两份文件的字节数及 SHA-256 均与源文件一致，关页后服务均正常回收。iPhone 的同一大文件连续发送用例待维护者验证。
 
 ## 回滚
 
-上一版是 [v0.16.2-rc](https://github.com/Super-JX3/GT8Pro-QuickShare-AirDrop/releases/tag/v0.16.2-rc)。也可从 [v0.16.1-rc](https://github.com/Super-JX3/GT8Pro-QuickShare-AirDrop/releases/tag/v0.16.1-rc) 或 [v0.15.2-rc](https://github.com/Super-JX3/GT8Pro-QuickShare-AirDrop/releases/tag/v0.15.2-rc) 下载历史版本。请使用同一个 Release 中的整合模块和桥 APK。
+上一版是 [v0.16.3-rc](https://github.com/Super-JX3/GT8Pro-QuickShare-AirDrop/releases/tag/v0.16.3-rc)。也可从 [v0.16.2-rc](https://github.com/Super-JX3/GT8Pro-QuickShare-AirDrop/releases/tag/v0.16.2-rc)、[v0.16.1-rc](https://github.com/Super-JX3/GT8Pro-QuickShare-AirDrop/releases/tag/v0.16.1-rc) 或 [v0.15.2-rc](https://github.com/Super-JX3/GT8Pro-QuickShare-AirDrop/releases/tag/v0.15.2-rc) 下载历史版本。请使用同一个 Release 中的整合模块和桥 APK。
 
 等待传输结束，在 KernelSU/SukiSU 管理器禁用 `gt8pro.mosey.integrated` 并正常重启。若需要恢复原先单独模块，请先核对各模块与当前固件兼容并启用已有备份；同签名的 0.12.5 桥 APK 沿用 0.12.3 的版本代码，便于通过 ADB 保留应用数据替换回 0.12.3；回滚时应同时恢复配套模块。不要通过清除 Google Play 服务、Mosey 或个人应用数据来回滚。

@@ -27,6 +27,7 @@ jobs:
           python3 bridge/test-callback.py
           python3 bridge/test-sdk-tools.py
           python3 tools/test-transfer-idle.py
+          python3 tools/test-provider-idle.py
           python3 tools/test-first-run.py
           python3 tools/test-boot-recovery.py
           python3 tools/test-runtime-upgrade.py
