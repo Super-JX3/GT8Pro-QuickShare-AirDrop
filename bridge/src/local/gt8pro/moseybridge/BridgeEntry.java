@@ -14,12 +14,18 @@ import android.os.Build;
 import android.os.IBinder;
 import android.os.Process;
 import android.os.SystemClock;
+import android.system.Os;
+import android.system.OsConstants;
+import android.system.StructStat;
 import android.util.Log;
 import de.robv.android.xposed.IXposedHookLoadPackage;
 import de.robv.android.xposed.XC_MethodHook;
 import de.robv.android.xposed.XposedBridge;
 import de.robv.android.xposed.callbacks.XC_LoadPackage;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileDescriptor;
+import java.nio.charset.StandardCharsets;
 import java.lang.reflect.*;
 import java.security.MessageDigest;
 import java.util.*;
@@ -47,7 +53,7 @@ public final class BridgeEntry implements IXposedHookLoadPackage {
                 }
             });
             s.emit("SESSION_STARTED","mode="+BuildVariant.MODE);
-            s.emit("MODULE_REVISION","value=1130");
+            s.emit("MODULE_REVISION","value=1142");
             s.emit("SESSION_LIMIT","scope=PROCESS_LIFETIME");
         } catch(Throwable failure){s.emit("SETUP_REJECTED","reason=ATTACH_HOOK");s.stop();}
     }
@@ -111,10 +117,11 @@ public final class BridgeEntry implements IXposedHookLoadPackage {
             try {
                 boolean gms="com.google.android.gms".equals(pkg);
                 emit("PREPARATION_STARTED","kind=OBSERVATION");
-                SourceGuard.hash(info,gms?SourceGuard.GMS_SHA:SourceGuard.MOSEY_SHA,preparationDeadline);
+                GmsProfile profile=gms?verifyGms(context,info,preparationDeadline):null;
+                if(!gms)SourceGuard.hash(info,SourceGuard.MOSEY_SHA,preparationDeadline);
                 emit("APK_IDENTITY","result=PASS");
-                if(uiCapability)installUiCapability(context,info,preparationDeadline);
-                else if(gms)installGms(info,preparationDeadline);
+                if(uiCapability)installUiCapability(context,info,profile,preparationDeadline);
+                else if(gms)installGms(info,profile,preparationDeadline);
                 else installMosey(info,preparationDeadline);
                 synchronized(lock){
                     if(stopped||SystemClock.elapsedRealtime()>=deadline)throw new Exception("EXPIRED");
@@ -127,31 +134,69 @@ public final class BridgeEntry implements IXposedHookLoadPackage {
                 emit("SETUP_REJECTED","reason="+failureReason(failure));stop();
             }
         }
+        GmsProfile verifyGms(Context context,ApplicationInfo info,long until)throws Exception{
+            PackageInfo installed=context.getPackageManager().getPackageInfo(pkg,PackageManager.GET_SIGNING_CERTIFICATES);
+            ApplicationInfo app=installed.applicationInfo;
+            if(app==null||app.uid!=info.uid||!Objects.equals(app.sourceDir,info.sourceDir))
+                throw new Exception("GMS_PACKAGE_IDENTITY");
+            if(!hasSigner(installed,GmsProfile.GOOGLE_SIGNER))throw new Exception("GMS_SIGNER");
+            long version=installed.getLongVersionCode();
+            String hash=SourceGuard.digest(new File(info.sourceDir).getCanonicalFile(),until);
+            GmsProfile profile=GmsProfile.reviewed(version,hash);
+            GmsProfile generated=readGeneratedGmsProfile();
+            boolean generatedMatch=generated!=null&&generated.matches(version,hash);
+            if(generatedMatch){
+                if(profile!=null&&!generated.equals(profile))throw new Exception("GMS_PROFILE_CONFLICT");
+                if(profile==null)profile=generated;
+            }
+            if(profile==null){
+                GmsProfile.forVersion(version);
+                throw new Exception("APK_HASH");
+            }
+            emit("GMS_PROFILE","version_code="+version+" source="+(generatedMatch?"GENERATED":"REVIEWED"));
+            return profile;
+        }
+        GmsProfile readGeneratedGmsProfile() {
+            String path="/dev/"+GmsProfile.MODULE_PATH;
+            try {
+                FileDescriptor fd=Os.open(path,OsConstants.O_RDONLY|OsConstants.O_NOFOLLOW|OsConstants.O_NONBLOCK,0);
+                try(FileInputStream input=new FileInputStream(fd)){
+                    StructStat stat=Os.fstat(fd);
+                    if(!OsConstants.S_ISREG(stat.st_mode)||stat.st_uid!=0||stat.st_gid!=0
+                            ||(stat.st_mode&0777)!=0644||stat.st_size<1||stat.st_size>512)return null;
+                    byte[] data=input.readNBytes(513);
+                    if(data.length!=stat.st_size)return null;
+                    return GmsProfile.parse(new String(data,StandardCharsets.US_ASCII));
+                } finally { if(fd.valid())Os.close(fd); }
+            }catch(Exception ignored){return null;}
+        }
+        boolean hasSigner(PackageInfo info,String expected)throws Exception{
+            Signature[] signers=info.signingInfo==null?null:info.signingInfo.getApkContentsSigners();
+            return signers!=null&&signers.length==1&&HexFormat.of().formatHex(
+                    MessageDigest.getInstance("SHA-256").digest(signers[0].toByteArray())).equals(expected);
+        }
         Class<?> target(String name,ApplicationInfo info,long until)throws Exception{
             SourceGuard.time(until);
             Class<?> c=Class.forName(name,false,loader);
             SourceGuard.owner(c,info,until);
             return c;
         }
-        void installUiCapability(Context context,ApplicationInfo info,long until)throws Exception{
+        void installUiCapability(Context context,ApplicationInfo info,GmsProfile profile,long until)throws Exception{
             PackageInfo mosey=context.getPackageManager().getPackageInfo(
                     "com.google.android.mosey",PackageManager.GET_SIGNING_CERTIFICATES);
             ApplicationInfo app=mosey.applicationInfo;
             int required=ApplicationInfo.FLAG_SYSTEM|ApplicationInfo.FLAG_UPDATED_SYSTEM_APP;
             if(app==null||!app.enabled||(app.flags & required)!=required
                     ||app.uid<10000||app.uid>=100000||mosey.getLongVersionCode()!=60715
-                    ||mosey.signingInfo==null)throw new Exception("UI_CAPABILITY_APP");
-            Signature[] signers=mosey.signingInfo.getApkContentsSigners();
-            if(signers==null||signers.length!=1||!HexFormat.of().formatHex(
-                    MessageDigest.getInstance("SHA-256").digest(signers[0].toByteArray()))
-                    .equals("82f90326951d14e08010b2a26cce329be2b09e74752158b7640e04a544676878"))
+                    ||!hasSigner(mosey,"82f90326951d14e08010b2a26cce329be2b09e74752158b7640e04a544676878"))
                 throw new Exception("UI_CAPABILITY_APP");
             SourceGuard.hashFile(new File("/system_ext/priv-app/MoseyApp/MoseyApp.apk"),
                     "8ddb871f9a4df13181de71a89dcbec9f05ff7a2c9c0519f88e5851e6e7765d14",until);
             // HomeFeatures is local to Quick Share's UI. Its constructor derives the
             // normal presentation from capability and GMS's own presentation flags.
-            Class<?> features=target("eouj",info,until);
-            if(features.getDeclaredField("h").getType()!=boolean.class)
+            Class<?> features=target(profile.homeFeaturesClass(),info,until);
+            Field capability=features.getDeclaredField(profile.interopField());
+            if(capability.getType()!=boolean.class||Modifier.isStatic(capability.getModifiers()))
                 throw new Exception("UI_CAPABILITY_SIGNATURE");
             Constructor<?> constructor=features.getDeclaredConstructor(boolean.class);
             AtomicInteger reports=new AtomicInteger();
@@ -164,9 +209,9 @@ public final class BridgeEntry implements IXposedHookLoadPackage {
                 }
             });
         }
-        void installGms(ApplicationInfo info,long until)throws Exception{
-            Class<?> flags=target("keky",info,until);
-            Method getter=flags.getDeclaredMethod("O");
+        void installGms(ApplicationInfo info,GmsProfile profile,long until)throws Exception{
+            Class<?> flags=target(profile.flagClass(),info,until);
+            Method getter=flags.getDeclaredMethod(profile.flagGetter());
             if(getter.getReturnType()!=boolean.class||Modifier.isStatic(getter.getModifiers())
                     ||Modifier.isNative(getter.getModifiers())||Modifier.isAbstract(getter.getModifiers()))
                 throw new Exception("GETTER_SIGNATURE");
@@ -187,6 +232,8 @@ public final class BridgeEntry implements IXposedHookLoadPackage {
                     }catch(Throwable ignored){/* Preserve the application's existing outcome. */}
                 }
             });
+            // These observers refer to the old APK's exact diagnostic members.
+            if(profile!=GmsProfile.GMS_264330035)return;
             Class<?> registry=target("jdhz",info,until);
             for(final String name:new String[]{"c","b"}){
                 Method method=registry.getDeclaredMethod(name);
@@ -898,7 +945,8 @@ public final class BridgeEntry implements IXposedHookLoadPackage {
                     "LOADER_TYPE","DEX_ELEMENTS","DEX_MISSING","DEX_NAME","DEX_ENTRIES","DEX_SOURCE",
                     "CLASS_BUDGET","CLASS_SOURCE_AMBIGUOUS","GETTER_SIGNATURE","REGISTRY_SIGNATURE",
                     "STATUS_SIGNATURE","CALLBACK_SIGNATURE","TASK_SIGNATURE","SDK_BIND_SIGNATURE","DISCOVER_SIGNATURE",
-                    "UI_CAPABILITY_APP","UI_CAPABILITY_SIGNATURE","NO_HANDLE"})if(code.equals(message))return code;
+                    "UI_CAPABILITY_APP","UI_CAPABILITY_SIGNATURE","GMS_PACKAGE_IDENTITY","GMS_SIGNER",
+                    "GMS_UNSUPPORTED_VERSION","GMS_PROFILE_CONFLICT","NO_HANDLE"})if(code.equals(message))return code;
             if(failure instanceof ClassNotFoundException)return "CLASS_UNAVAILABLE";
             if(failure instanceof ReflectiveOperationException)return "REFLECTION_UNAVAILABLE";
             return "IDENTITY_SOURCE_OR_INSTALL";

@@ -6,13 +6,19 @@
 
 > **已知兼容性问题（0.13.7 / 0.11.6）：** 该旧版本在多处将 Mosey 应用 UID 固定为测试机的 `10366`。即使是相同机型和固件，其他设备的 UID 也可能不同，导致服务无法启动、代理及异常恢复失败。请勿把该旧候选视为支持所有同型号设备；0.13.8 候选已改为动态查询 UID，并在原测试机启动及完成一次 iPhone→Android 文件接收；不同 UID 的真实设备仍未验证。
 
+## 0.16.6 GMS 适配生成助手
+
+模块生成助手 0.3.0-dev 在手机上核对已安装的 Google Play 服务签名，并离线查找 AirDrop 开关和 Quick Share 横幅。两处都能唯一匹配时，助手可生成带当前 GMS 配置的 ZIP。桥接 0.12.7 在开机后读取这份配置，并继续核对 GMS 版本代码、APK 哈希和目标类归属。
+
+在指定固件的 GT8 Pro 与 GMS 26.45.31 上，已验证手机端生成和安装、重启后读取生成的配置、报告 iOS 能力、发送页注册服务以及退出后恢复待命。本轮文件传输待单独复测。
+
+下载 [v0.16.6-rc 实验版](https://github.com/Super-JX3/GT8Pro-QuickShare-AirDrop/releases/tag/v0.16.6-rc)，按[安装说明](docs/INSTALL.md)配对安装。GMS 更新后可用助手重新生成模块；无法唯一识别适配点时，助手会停止生成。
+
 ## 0.16.4 修复大文件发送后的服务回收
 
 Mosey 有时会在 `Active Transfers` 中保留已完成的任务。新版确认其中每条任务都已结束，再结合 Google Play 服务与 Mosey 的空闲状态回收服务。活动任务、未完成任务或无法确认的状态仍会阻止回收。
 
 在指定固件的 GT8 Pro 上，连续两次向同一台 Mac 发送约 96 MiB 的 ZIP，接收文件均通过 SHA-256 和解压完整性检查。第一次关页约 20 秒后服务恢复待命，随后直接重开 Quick Share 发送页即可发现同一台 Mac。两轮之间没有手动重启服务、重启手机或切换 Wi-Fi。普通设置页的待命检查也通过。
-
-使用 [v0.16.4-rc 实验版](https://github.com/Super-JX3/GT8Pro-QuickShare-AirDrop/releases/tag/v0.16.4-rc) 的模块 ZIP 和 0.12.5 桥 APK。已安装匹配的 0.12.5 桥时，只需更新模块并正常重启。详见[安装与回滚说明](docs/INSTALL.md)。
 
 ## 0.16.3 修复直接打开发送页时服务未注册
 
@@ -91,7 +97,7 @@ adb shell 'su -c "sh /data/adb/modules/gt8pro.mosey.integrated/payload/restart-s
 | 平台与内核 | `canoe`；`6.12.23-android16-5-gb2a876903b49-ab14541642-4k` |
 | Root / 挂载 | 测试机使用 KernelSU/SukiSU 与 SELinux Enforcing |
 | 应用桥 | LSPosed；仅作用于主用户的 Google Play 服务和 `com.google.android.mosey` |
-| 软件身份 | Mosey 60715 与固定版本的 Google Play 服务，运行时通过 SHA-256 核对 |
+| 软件身份 | Mosey 60715；GMS 按内置或生成的配置核对 Google 签名、版本代码与 SHA-256 |
 
 其他机型、固件、内核、Magisk 或其他版本的 GMS/Mosey **未验证**。安装检查会拒绝不匹配环境；不要通过删除检查来宣称已适配。固件或应用更新可能使模块停止工作。
 
@@ -116,6 +122,7 @@ Live Photo 的动态部分和 Android 相册显示兼容性尚未完成验证。
 ## 源码和许可
 
 - `bridge/`：LSPosed 桥接源码及主机测试。
+- `mobile-builder/`：手机端模块生成助手和离线 GMS 适配扫描。
 - `module-template/`：整合模块脚本和校验清单，不含外部二进制输入。
 - `native/`、`helpers/`：守护进程和辅助工具的源码。
 - `tools/assemble.py`：基于本地输入的组包工具。

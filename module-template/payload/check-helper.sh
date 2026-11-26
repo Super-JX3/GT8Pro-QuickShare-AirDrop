@@ -27,5 +27,5 @@ apk=$( (
  END{if(markers==1&&rc==0&&n==1&&!bad)print v;else exit 1}') || exit 1
 
 sum=$(sha256sum "$apk") || exit 1
-[ "${sum%% *}" = 9b79647453887a719ce1a2771ec3fb09bc68fb971e3a81280d9a9d59ed407cc3 ] || exit 1
+[ "${sum%% *}" = 35735e517e07adc668cfa580ae70af873b2c6b9a7ba86570316b85a80cc7c3c3 ] || exit 1
 CLASSPATH="$helper" timeout -k 1 12 /system/bin/app_process /system/bin GT8ProLSPosedSetup --check /data/adb/lspd/config/modules_config.db "$apk"

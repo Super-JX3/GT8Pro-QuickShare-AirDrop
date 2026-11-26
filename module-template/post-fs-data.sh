@@ -9,6 +9,28 @@ m=/data/adb/modules/gt8pro.mosey.integrated
 [ "$(id -u)" = 0 ] && [ "$(getprop ro.product.model)" = RMX5200 ] && [ "$(getprop ro.build.display.id)" = 'RMX5200_16.0.10.501(CN01)' ] || exit 1
 [ ! -L "$m" ] && [ -d "$m" ] || exit 1
 for flag in disable remove update skip_mount;do [ ! -e "$m/$flag" ] && [ ! -L "$m/$flag" ] || exit 0;done
+publish_gms_profile(){
+ local name=gt8pro-mosey-gms.profile manifest input expected size temp
+ input=$m/$name
+ [ -e "$input" ] || [ -L "$input" ] || return 0
+ [ ! -L "$input" ] && [ -f "$input" ] && [ "$(stat -c '%u:%g:%a' "$input")" = 0:0:644 ] || return 1
+ size=$(stat -c '%s' "$input") || return 1
+ [ "$size" -ge 1 ] && [ "$size" -le 512 ] || return 1
+ manifest=$m/install.sha256
+ [ ! -L "$manifest" ] && [ -f "$manifest" ] && [ "$(stat -c '%u:%g:%a' "$manifest")" = 0:0:644 ] || return 1
+ expected=$(awk -v name="$name" '
+   $2==name {found++; if(NF==2 && length($1)==64 && $1!~/[^a-f0-9]/)hash=$1}
+   END{if(found!=1 || hash=="")exit 1;print hash}' "$manifest") || return 1
+ temp=$(mktemp /dev/.gt8-mosey-gms.XXXXXX) || return 1
+ if cat "$input" >"$temp" && [ "$(sha256sum "$temp" | cut -d ' ' -f1)" = "$expected" ] &&
+   chown 0:0 "$temp" && chmod 0644 "$temp" && chcon u:object_r:gt8pro_mosey_gms_config:s0 "$temp" &&
+   mv -fT "$temp" "/dev/$name";then
+  return 0
+ fi
+ rm -f "$temp"
+ return 1
+}
+publish_gms_profile || log -p w -t GT8MoseyProfile 'GMS_CONFIG_PUBLISH_FAILED'
 [ ! -e "$m/system" ] && [ ! -L "$m/system" ] || exit 0
 source=$m/system_ext
 [ ! -L "$source" ] && [ -d "$source" ] || exit 1

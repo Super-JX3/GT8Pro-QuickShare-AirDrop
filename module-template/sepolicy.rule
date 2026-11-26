@@ -7,3 +7,7 @@ type_transition ksu mosey_server_exec process mosey_server;
 
 # Needed only by the run's pidfd-owning ksu supervisor/guardian to stop its child.
 allow ksu mosey_server process { signal sigkill };
+
+# Public compatibility metadata from this module. GMS has read access only.
+type gt8pro_mosey_gms_config file_type;
+allow gmscore_app gt8pro_mosey_gms_config file { getattr open read };

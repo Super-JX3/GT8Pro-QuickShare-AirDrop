@@ -52,6 +52,16 @@ ui_state(){
  fi
  printf '%s\n' "$state"
 }
+ui_wait_for_adopt(){
+ local attempts=$1 state
+ while [ "$attempts" -gt 0 ];do
+  state=$(ui_state) || state=UNCONFIRMED
+  [ "$state" = TARGET_TOP ] && return 0
+  attempts=$((attempts-1))
+  [ "$attempts" -eq 0 ] || sleep 0.5
+ done
+ return 1
+}
 # SettingsMainActivity hosts ordinary settings as well as the live send surface.
 # GMS exposes the active foreground send registration without UI text or payload.
 ui_settings_send_state(){

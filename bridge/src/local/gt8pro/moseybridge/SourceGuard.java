@@ -12,7 +12,6 @@ import java.util.*;
 
 /** Check the defining loader; never open a new target DexFile or run target code. */
 final class SourceGuard {
-    static final String GMS_SHA="8395c70a5e4ffbe2712aea7e1045d700b282f0a67d19b80686c595c991f12112";
     static final String MOSEY_SHA="7ab2deaea6c9c2bdd5ba0f935d6143c115f5ceb11cb8b63066496ad27a28da49";
     private SourceGuard() {}
     static void time(long deadline) throws Exception {
@@ -36,6 +35,9 @@ final class SourceGuard {
         return splits;
     }
     static void hashFile(File base,String expected,long deadline) throws Exception {
+        if(!expected.equals(digest(base,deadline)))throw new Exception("APK_HASH");
+    }
+    static String digest(File base,long deadline) throws Exception {
         MessageDigest sha=MessageDigest.getInstance("SHA-256");
         long before=base.length(), modified=base.lastModified();
         if(before<1||before>256L*1024*1024)throw new Exception("APK_SIZE");
@@ -46,7 +48,7 @@ final class SourceGuard {
         if(base.length()!=before||base.lastModified()!=modified)throw new Exception("APK_CHANGED");
         StringBuilder hex=new StringBuilder();
         for(byte b:sha.digest())hex.append(String.format(java.util.Locale.ROOT,"%02x",b&255));
-        if(!expected.equals(hex.toString()))throw new Exception("APK_HASH");
+        return hex.toString();
     }
     static void owner(Class<?> type, ApplicationInfo info, long deadline) throws Exception {
         ClassLoader loader=type.getClassLoader();

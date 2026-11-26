@@ -26,6 +26,7 @@ jobs:
           python3 bridge/test-metadata.py
           python3 bridge/test-callback.py
           python3 bridge/test-sdk-tools.py
+          python3 mobile-builder/test-host.py
           python3 tools/test-transfer-idle.py
           python3 tools/test-provider-idle.py
           python3 tools/test-first-run.py
@@ -33,6 +34,7 @@ jobs:
           python3 tools/test-runtime-upgrade.py
           python3 tools/test-helper-cache-upgrade.py
           python3 tools/test-supervisor-retry.py
+          python3 tools/test-startup-race.py
           python3 tools/test-ui-displays.py
       - name: Shell syntax
         run: find module-template -name '*.sh' -print0 | xargs -0 -n 1 sh -n

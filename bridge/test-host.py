@@ -24,7 +24,10 @@ test_guard=build/'test-src/local/gt8pro/moseybridge/SourceGuard.java'
 test_guard.parent.mkdir(parents=True,exist_ok=True)
 test_guard.write_text(source_guard.replace(real_hash,fixture_hash))
 subprocess.run([str(jdk/'javac'),'-d',str(boot),*[str(x) for x in stub.rglob('*.java')]],check=True)
-subprocess.run([str(jdk/'javac'),'-cp',str(boot),'-d',str(classes),str(root/'src/local/gt8pro/moseybridge/HookLogic.java'),str(test_guard),str(root/'src/local/gt8pro/moseybridge/ProbeLogic.java'),str(root/'src/local/gt8pro/moseybridge/RegistrationLogic.java'),str(root/'tests/HostTest.java'),str(p)],check=True)
+sources_to_test = root/'src/local/gt8pro/moseybridge'
+subprocess.run([str(jdk/'javac'),'-cp',str(boot),'-d',str(classes),
+                *[str(sources_to_test/name) for name in ('HookLogic.java','GmsProfile.java','ProbeLogic.java','RegistrationLogic.java')],
+                str(test_guard),str(root/'tests/HostTest.java'),str(p)],check=True)
 r=subprocess.run([str(jdk/'java'),'-Xbootclasspath/a:'+str(boot),'-cp',str(classes),'local.gt8pro.moseybridge.HostTest',str(classes/'fixture/Target.class')],text=True,capture_output=True,check=True,timeout=10)
 (build/'results.txt').write_text(r.stdout+r.stderr)
 print(r.stdout,end='')

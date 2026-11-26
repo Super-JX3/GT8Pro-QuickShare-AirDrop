@@ -1,4 +1,4 @@
-> 当前源码为 0.16.4 / 0.12.5 实验候选。自编译产物尚未经过实机验证。
+> 当前源码为 0.16.6 / 0.12.7 实验候选。
 
 # 构建与输入边界
 
@@ -10,7 +10,7 @@
 python3 build.py
 ```
 
-输出为 `dist/GT8Pro-QuickShare-0.16.4.zip`。也可用 `python3 build.py --input /path/to/local-files` 指定本地目录、ZIP 或单个文件；`--input` 可重复，`--output` 可更改输出路径。脚本不会下载或上传本地输入。
+输出为 `dist/GT8Pro-QuickShare-0.16.6.zip`。也可用 `python3 build.py --input /path/to/local-files` 指定本地目录、ZIP 或单个文件；`--input` 可重复，`--output` 可更改输出路径。脚本不会下载或上传本地输入。
 
 仓库的 `releases/GT8Pro-project-helpers-0.13.9.zip` 提供本项目五个固定版本辅助程序，源码分别位于 `helpers/`、`native/` 和 `module-template/base-service/source/`；它们不再要求从旧整合 ZIP 获取。`external-inputs.json` 仍对所有输入按长度与 SHA-256 匹配，并验证安装清单的完整校验链；缺项会列出后退出。
 
@@ -49,6 +49,8 @@ python3 tools/build-helpers.py --android-jar /path/to/android-36/android.jar --d
 `bridge/build.py` 是当前桥源码的构建入口，要求 Android 36 平台、Android 16 build-tools、Xposed API 82、JDK 17 和签名目录；首次使用时会创建签名身份，后续构建应保留同一身份；脚本对指定工具包有固定哈希检查。其参数为 `--tools`、`--jdk`、`--out`、`--signing`。不要把签名目录、密钥或密码提交到仓库。
 
 仓库提供的桥 APK 为候选构建；自编译 APK 的哈希由源码构建入口写入校验链。不同签名不可直接覆盖现有 APK。
+
+桥接可以使用已复核的内置配置，也可以读取由[手机端构建助手](../mobile-builder/README.md)写入模块的配置。维护者可用[主机扫描工具](../tools/gms-gate-proof/README.md)检查本地 GMS APK。
 
 主机测试示例：
 

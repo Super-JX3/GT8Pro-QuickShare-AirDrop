@@ -130,6 +130,9 @@ public final class HostTest {
   check(ProbeLogic.inspect(true,1,2,()->{throw new Exception("PRIVATE_IDENTIFIER");}).equals("LOOKUP_ERROR"),"other failure categorized privately");
  }
  public static void main(String[] a)throws Exception{
+  check(GmsProfile.forVersion(264330035)==GmsProfile.GMS_264330035,"previous GMS mapping preserved");
+  check(GmsProfile.forVersion(264531035)==GmsProfile.GMS_264531035,"updated GMS mapping selected");
+  rejects(()->GmsProfile.forVersion(264531036),"unreviewed GMS build has no fallback");
   check(RegistrationLogic.state(false,false,false).equals("PENDING"),"pending task is not success");
   check(RegistrationLogic.state(true,false,false).equals("SUCCESS"),"completed success");
   check(RegistrationLogic.state(true,false,true).equals("FAILED"),"completed failure");
